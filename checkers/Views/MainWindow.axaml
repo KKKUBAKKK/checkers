@@ -8,9 +8,9 @@
         x:DataType="vm:GameViewModel"
         Title="English Checkers - Play vs Bot">
 
-    <!-- <Design.DataContext> -->
-    <!--     <vm:GameViewModel/> -->
-    <!-- </Design.DataContext> -->
+    <Design.DataContext>
+        <vm:GameViewModel/>
+    </Design.DataContext>
 
     <Window.Styles>
         <Style Selector="Button.square">
@@ -57,7 +57,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Command="{Binding DataContext.SquareClickCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
+                            <Button Command="{Binding $parent[Window].((vm:GameViewModel)DataContext).SquareClickCommand}" 
                                     CommandParameter="{Binding}">
                                 <Grid Width="60" Height="60">
                                     <!-- Base square appearance -->
