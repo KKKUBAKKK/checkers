@@ -1,0 +1,135 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:checkers.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="750"
+        x:Class="checkers.Views.MainWindow"
+        x:DataType="vm:GameViewModel"
+        Title="English Checkers - Play vs Bot">
+
+    <!-- <Design.DataContext> -->
+    <!--     <vm:GameViewModel/> -->
+    <!-- </Design.DataContext> -->
+
+    <Window.Styles>
+        <Style Selector="Button.square">
+            <Setter Property="Width" Value="60"/>
+            <Setter Property="Height" Value="60"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        
+        <Style Selector="Button.game-option">
+            <Setter Property="Padding" Value="10 5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        
+        <Style Selector="Border.highlighted">
+            <Setter Property="BorderBrush" Value="LightGreen"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="Border.selected">
+            <Setter Property="BorderBrush" Value="Blue"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+    </Window.Styles>
+    
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Game Information Area -->
+        <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Center" Margin="10">
+            <TextBlock Text="{Binding CurrentTurn}" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,5"/>
+            <TextBlock Text="{Binding TimeDisplay}" FontSize="16" HorizontalAlignment="Center" Margin="0,5"/>
+            <TextBlock Text="{Binding StatusMessage}" FontSize="14" HorizontalAlignment="Center" Margin="0,5"/>
+        </StackPanel>
+        
+        <!-- Checkers Board -->
+        <Border Grid.Row="1" BorderBrush="Black" BorderThickness="2" Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Grid x:Name="BoardGrid" Width="480" Height="480">
+                <ItemsControl ItemsSource="{Binding BoardSquares}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="8" Columns="8"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding DataContext.SquareClickCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
+                                    CommandParameter="{Binding}">
+                                <Grid Width="60" Height="60">
+                                    <!-- Base square appearance -->
+                                    <Rectangle Fill="{Binding Color}" Width="60" Height="60"/>
+            
+                                    <!-- Highlight for valid moves -->
+                                    <Rectangle IsVisible="{Binding IsHighlighted}" Fill="#5500FF00" Width="60" Height="60"/>
+            
+                                    <!-- Selected square indicator -->
+                                    <Rectangle IsVisible="{Binding IsSelected}" Stroke="Blue" StrokeThickness="3" 
+                                               Width="56" Height="56"/>
+            
+                                    <!-- Hint Source indicator (piece to move) -->
+                                    <Rectangle IsVisible="{Binding IsHintSource}" Stroke="#FFFF00" StrokeThickness="3"
+                                               StrokeDashArray="2,2" Width="56" Height="56"/>
+                     
+                                    <!-- Hint Target indicator (where to move) -->
+                                    <Rectangle IsVisible="{Binding IsHintTarget}" Fill="#33FFFF00" 
+                                               Width="60" Height="60"/>
+            
+                                    <!-- Piece display -->
+                                    <Ellipse Width="40" Height="40" IsVisible="{Binding HasPiece}" 
+                                             Fill="{Binding PieceColor}" Stroke="White" StrokeThickness="1"/>
+            
+                                    <!-- King indicator -->
+                                    <Ellipse Width="20" Height="20" IsVisible="{Binding IsKing}" 
+                                             Fill="Gold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Border>
+        
+        <!-- Game Options Area -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,*,*" Margin="10">
+            <!-- Left Section: Time Limits -->
+            <StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Center">
+                <TextBlock Text="Time Limit:" HorizontalAlignment="Center" Margin="0,5"/>
+                <ComboBox SelectedIndex="{Binding SelectedTimeLimitIndex}" Width="120" Margin="5">
+                    <ComboBoxItem>No Limit</ComboBoxItem>
+                    <ComboBoxItem>30 Seconds</ComboBoxItem>
+                    <ComboBoxItem>1 Minute</ComboBoxItem>
+                    <ComboBoxItem>3 Minutes</ComboBoxItem>
+                    <ComboBoxItem>5 Minutes</ComboBoxItem>
+                </ComboBox>
+            </StackPanel>
+            
+            <!-- Center Section: Board Options -->
+            <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Center">
+                <CheckBox IsChecked="{Binding RotateBoardAfterMove}" Margin="5">Rotate Board After Move</CheckBox>
+                <Button Classes="game-option" Command="{Binding NewGameCommand}" Margin="0,10,0,0">New Game</Button>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Center">
+                <CheckBox IsChecked="{Binding RotateBoardAfterMove}" Margin="5">Rotate Board After Move</CheckBox>
+                <Button Command="{Binding NewGameCommand}" Margin="0,10,0,0">New Game</Button>
+                <Button Command="{Binding GetHintCommand}" 
+                        IsEnabled="{Binding CanRequestHint}"
+                        Margin="0,5,0,0">Get Hint</Button>
+            </StackPanel>
+            
+            <!-- Right Section: Bot Difficulty -->
+            <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Center">
+                <TextBlock Text="Bot Difficulty:" HorizontalAlignment="Center" Margin="0,5"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding ChangeDifficultyCommand}" CommandParameter="1" Margin="3">Easy</Button>
+                    <Button Command="{Binding ChangeDifficultyCommand}" CommandParameter="2" Margin="3">Medium</Button>
+                    <Button Command="{Binding ChangeDifficultyCommand}" CommandParameter="3" Margin="3">Hard</Button>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,64 @@
+# Test Results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.opencover.xml
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider files
+.vs/
+.idea/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.testlog
+*.manifest
+*.tmp
+*.tmp_proj
+*_i.c
+*_p.c
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.vspscc
+*.vssscc
+
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# xUnit
+xunit.*.json
+
+# Code coverage
+coverage.json
+coverage.cobertura.xml
+*.coveragexml
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# VS Code
+.vscode/
