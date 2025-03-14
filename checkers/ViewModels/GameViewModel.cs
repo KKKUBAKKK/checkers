@@ -77,7 +77,7 @@ namespace checkers.ViewModels
             : "Time: No Limit";
 
         public string CurrentTurn => _gameBoard.IsGameOver 
-            ? $"Game Over - {(_gameBoard.Winner == PieceType.Red ? "You" : "Bot")} Won!" 
+            ? $"Game Over - {(_gameBoard.Winner == PieceType.White ? "You" : "Bot")} Won!" 
             : $"Current Turn: {(_isPlayerTurn ? "Your Turn" : "Bot's Turn")}";
 
         public ICommand SquareClickCommand { get; }
@@ -135,7 +135,7 @@ namespace checkers.ViewModels
                 ResetTimer();
         
                 // Update status messages
-                StatusMessage = "New game started. Your turn (Red pieces)";
+                StatusMessage = "New game started.";
         
                 // Notify UI of property changes
                 this.RaisePropertyChanged(nameof(CurrentTurn));
@@ -166,7 +166,7 @@ namespace checkers.ViewModels
                         Column = col,
                         Color = isDark ? "#663300" : "#FFCC99",
                         HasPiece = piece.Type != PieceType.None,
-                        PieceColor = piece.Type == PieceType.Red ? "Red" : 
+                        PieceColor = piece.Type == PieceType.White ? "White" : 
                             piece.Type == PieceType.Black ? "Black" : null,
                         IsKing = piece.Rank == PieceRank.King,
                         IsHighlighted = false,
@@ -223,7 +223,7 @@ namespace checkers.ViewModels
             // If no square is selected, try to select one with a piece
             if (_selectedSquare == null)
             {
-                if (piece.Type == PieceType.Red) // Player's pieces are red
+                if (piece.Type == PieceType.White) // Player's pieces are red
                 {
                     _selectedSquare = clickedSquare;
                     clickedSquare.IsSelected = true;
@@ -247,7 +247,7 @@ namespace checkers.ViewModels
             }
 
             // If clicking on another piece of the same color, select that one instead
-            if (piece.Type == PieceType.Red)
+            if (piece.Type == PieceType.White)
             {
                 _selectedSquare.IsSelected = false;
                 _selectedSquare = clickedSquare;
@@ -278,7 +278,7 @@ namespace checkers.ViewModels
                 // Check if the game is over
                 if (_gameBoard.IsGameOver)
                 {
-                    StatusMessage = $"Game over! {(_gameBoard.Winner == PieceType.Red ? "You" : "Bot")} won!";
+                    StatusMessage = $"Game over! {(_gameBoard.Winner == PieceType.White ? "You" : "Bot")} won!";
                     this.RaisePropertyChanged(nameof(CurrentTurn));
                     return;
                 }
@@ -350,7 +350,7 @@ namespace checkers.ViewModels
             if (_gameBoard.IsGameOver)
             {
                 _isBotThinking = false;
-                StatusMessage = $"Game over! {(_gameBoard.Winner == PieceType.Red ? "You" : "Bot")} won!";
+                StatusMessage = $"Game over! {(_gameBoard.Winner == PieceType.White ? "You" : "Bot")} won!";
                 this.RaisePropertyChanged(nameof(CurrentTurn));
                 return;
             }
@@ -376,7 +376,7 @@ namespace checkers.ViewModels
                 if (_gameBoard.IsGameOver)
                 {
                     _isBotThinking = false;
-                    StatusMessage = $"Game over! {(_gameBoard.Winner == PieceType.Red ? "You" : "Bot")} won!";
+                    StatusMessage = $"Game over! {(_gameBoard.Winner == PieceType.White ? "You" : "Bot")} won!";
                     this.RaisePropertyChanged(nameof(CurrentTurn));
                     return;
                 }

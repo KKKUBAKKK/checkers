@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace checkers.Models
 {
-    public enum PieceType { None, Red, Black }
+    public enum PieceType { None, White, Black }
     public enum PieceRank { Regular, King }
 
     public class CheckersPiece
@@ -125,12 +125,12 @@ namespace checkers.Models
                 {
                     if ((row + col) % 2 == 1)
                     {
-                        _board[row, col] = new CheckersPiece(PieceType.Red);
+                        _board[row, col] = new CheckersPiece(PieceType.White);
                     }
                 }
             }
 
-            _currentTurn = PieceType.Red;
+            _currentTurn = PieceType.White;
             IsGameOver = false;
             Winner = PieceType.None;
 
@@ -178,7 +178,7 @@ namespace checkers.Models
             if (!_validMoves.Any())
             {
                 IsGameOver = true;
-                Winner = _currentTurn == PieceType.Red ? PieceType.Black : PieceType.Red;
+                Winner = _currentTurn == PieceType.White ? PieceType.Black : PieceType.White;
             }
         }
 
@@ -190,8 +190,8 @@ namespace checkers.Models
             // Define valid directions based on piece type and rank
             List<(int dr, int dc)> directions = new List<(int, int)>();
             
-            if (piece.Type == PieceType.Red || piece.Rank == PieceRank.King)
-                directions.AddRange(new[] { (-1, -1), (-1, 1) });  // Red moves up
+            if (piece.Type == PieceType.White || piece.Rank == PieceRank.King)
+                directions.AddRange(new[] { (-1, -1), (-1, 1) });  // White moves up
 
             if (piece.Type == PieceType.Black || piece.Rank == PieceRank.King)
                 directions.AddRange(new[] { (1, -1), (1, 1) });    // Black moves down
@@ -221,8 +221,8 @@ namespace checkers.Models
             // Define valid directions based on piece type and rank
             List<(int dr, int dc)> directions = new List<(int, int)>();
             
-            if (piece.Type == PieceType.Red || piece.Rank == PieceRank.King)
-                directions.AddRange(new[] { (-1, -1), (-1, 1) });  // Red moves up
+            if (piece.Type == PieceType.White || piece.Rank == PieceRank.King)
+                directions.AddRange(new[] { (-1, -1), (-1, 1) });  // White moves up
 
             if (piece.Type == PieceType.Black || piece.Rank == PieceRank.King)
                 directions.AddRange(new[] { (1, -1), (1, 1) });    // Black moves down
@@ -281,7 +281,7 @@ namespace checkers.Models
             var piece = _board[move.To.Row, move.To.Col];
             if (piece.Rank == PieceRank.Regular)
             {
-                if ((piece.Type == PieceType.Red && move.To.Row == 0) ||
+                if ((piece.Type == PieceType.White && move.To.Row == 0) ||
                     (piece.Type == PieceType.Black && move.To.Row == BoardSize - 1))
                 {
                     piece.Rank = PieceRank.King;
@@ -289,7 +289,7 @@ namespace checkers.Models
             }
 
             // Switch turns
-            _currentTurn = _currentTurn == PieceType.Red ? PieceType.Black : PieceType.Red;
+            _currentTurn = _currentTurn == PieceType.White ? PieceType.Black : PieceType.White;
             
             // Update valid moves for next player
             UpdateValidMoves();

@@ -1,6 +1,10 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:checkers.Converters"
              x:Class="checkers.App">
+    <Application.Resources>
+        <converters:PieceStrokeConverter x:Key="PieceStrokeConverter"/>
+    </Application.Resources>
     <Application.Styles>
         <FluentTheme/>
     </Application.Styles>

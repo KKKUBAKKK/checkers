@@ -3,10 +3,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:checkers.ViewModels"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="750"
+        mc:Ignorable="d" d:DesignWidth="850" d:DesignHeight="650"
+        Width="850" Height="650"
+        MinWidth="850" MinHeight="650"
         x:Class="checkers.Views.MainWindow"
         x:DataType="vm:GameViewModel"
-        Title="English Checkers - Play vs Bot">
+        Title="English Checkers - Player vs Bot">
 
     <Design.DataContext>
         <vm:GameViewModel/>
@@ -15,7 +17,7 @@
     <Window.Styles>
         <Style Selector="Button.square">
             <Setter Property="Width" Value="60"/>
-            <Setter Property="Height" Value="60"/>
+            <Setter Property="Height" Value="50"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -38,16 +40,10 @@
         </Style>
     </Window.Styles>
     
-    <Grid RowDefinitions="Auto,*,Auto">
-        <!-- Game Information Area -->
-        <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Center" Margin="10">
-            <TextBlock Text="{Binding CurrentTurn}" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,5"/>
-            <TextBlock Text="{Binding TimeDisplay}" FontSize="16" HorizontalAlignment="Center" Margin="0,5"/>
-            <TextBlock Text="{Binding StatusMessage}" FontSize="14" HorizontalAlignment="Center" Margin="0,5"/>
-        </StackPanel>
-        
+    <Grid RowDefinitions="Auto" ColumnDefinitions="3*,1*" HorizontalAlignment="Center" VerticalAlignment="Center">
         <!-- Checkers Board -->
-        <Border Grid.Row="1" BorderBrush="Black" BorderThickness="2" Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border Grid.Row="0" Grid.Column="0" BorderBrush="Black" BorderThickness="2" 
+                Margin="50" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Grid x:Name="BoardGrid" Width="480" Height="480">
                 <ItemsControl ItemsSource="{Binding BoardSquares}">
                     <ItemsControl.ItemsPanel>
@@ -80,7 +76,9 @@
             
                                     <!-- Piece display -->
                                     <Ellipse Width="40" Height="40" IsVisible="{Binding HasPiece}" 
-                                             Fill="{Binding PieceColor}" Stroke="White" StrokeThickness="1"/>
+                                             Fill="{Binding PieceColor}" 
+                                             Stroke="{Binding PieceColor, Converter={StaticResource PieceStrokeConverter}}" 
+                                             StrokeThickness="1"/>
             
                                     <!-- King indicator -->
                                     <Ellipse Width="20" Height="20" IsVisible="{Binding IsKing}" 
@@ -93,43 +91,71 @@
             </Grid>
         </Border>
         
-        <!-- Game Options Area -->
-        <Grid Grid.Row="2" ColumnDefinitions="*,*,*" Margin="10">
-            <!-- Left Section: Time Limits -->
-            <StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Center">
-                <TextBlock Text="Time Limit:" HorizontalAlignment="Center" Margin="0,5"/>
-                <ComboBox SelectedIndex="{Binding SelectedTimeLimitIndex}" Width="120" Margin="5">
+        <!-- Game Information and Options Area -->
+        <StackPanel Grid.Row="0" Grid.Column="1" Width="260" Orientation="Vertical" Margin="10">
+            <!-- Game Information Area -->
+            <Border Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="{Binding CurrentTurn}" 
+                             FontSize="18" 
+                             FontWeight="Bold" 
+                             Height="27"/>
+                    <TextBlock Text="{Binding TimeDisplay}" 
+                             FontSize="16" 
+                             Height="24"/>
+                    <TextBlock Text="{Binding StatusMessage}" 
+                             FontSize="14" 
+                             Height="21" 
+                             TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Game Options Area -->
+            <StackPanel Margin="0,10">
+                <TextBlock Text="Time Limit:" Margin="0,0,0,5"/>
+                <ComboBox SelectedIndex="{Binding SelectedTimeLimitIndex}" 
+                         Width="200" 
+                         HorizontalAlignment="Left" 
+                         Margin="0,0,0,20">
                     <ComboBoxItem>No Limit</ComboBoxItem>
                     <ComboBoxItem>30 Seconds</ComboBoxItem>
                     <ComboBoxItem>1 Minute</ComboBoxItem>
                     <ComboBoxItem>3 Minutes</ComboBoxItem>
                     <ComboBoxItem>5 Minutes</ComboBoxItem>
                 </ComboBox>
-            </StackPanel>
-            
-            <!-- Center Section: Board Options -->
-            <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Center">
-                <CheckBox IsChecked="{Binding RotateBoardAfterMove}" Margin="5">Rotate Board After Move</CheckBox>
-                <Button Classes="game-option" Command="{Binding NewGameCommand}" Margin="0,10,0,0">New Game</Button>
-            </StackPanel>
-            
-            <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Center">
-                <CheckBox IsChecked="{Binding RotateBoardAfterMove}" Margin="5">Rotate Board After Move</CheckBox>
-                <Button Command="{Binding NewGameCommand}" Margin="0,10,0,0">New Game</Button>
+
+                <CheckBox IsChecked="{Binding RotateBoardAfterMove}" 
+                         Margin="0,0,0,20">
+                    Rotate Board After Move
+                </CheckBox>
+
+                <Button Command="{Binding NewGameCommand}" 
+                        Width="200" 
+                        HorizontalAlignment="Left" 
+                        Margin="0,0,0,10">
+                    New Game
+                </Button>
+
                 <Button Command="{Binding GetHintCommand}" 
-                        IsEnabled="{Binding CanRequestHint}"
-                        Margin="0,5,0,0">Get Hint</Button>
+                        IsEnabled="{Binding CanRequestHint}" 
+                        Width="200" 
+                        HorizontalAlignment="Left" 
+                        Margin="0,0,0,20">
+                    Get Hint
+                </Button>
+
+                <TextBlock Text="Bot Difficulty:" Margin="0,0,0,5"/>
+                <UniformGrid Columns="3" Width="200" HorizontalAlignment="Left">
+                    <Button Command="{Binding ChangeDifficultyCommand}" 
+                            CommandParameter="1" 
+                            Margin="0,0,5,0">Easy</Button>
+                    <Button Command="{Binding ChangeDifficultyCommand}" 
+                            CommandParameter="2" 
+                            Margin="0,0,5,0">Medium</Button>
+                    <Button Command="{Binding ChangeDifficultyCommand}" 
+                            CommandParameter="3">Hard</Button>
+                </UniformGrid>
             </StackPanel>
-            
-            <!-- Right Section: Bot Difficulty -->
-            <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Center">
-                <TextBlock Text="Bot Difficulty:" HorizontalAlignment="Center" Margin="0,5"/>
-                <StackPanel Orientation="Horizontal">
-                    <Button Command="{Binding ChangeDifficultyCommand}" CommandParameter="1" Margin="3">Easy</Button>
-                    <Button Command="{Binding ChangeDifficultyCommand}" CommandParameter="2" Margin="3">Medium</Button>
-                    <Button Command="{Binding ChangeDifficultyCommand}" CommandParameter="3" Margin="3">Hard</Button>
-                </StackPanel>
-            </StackPanel>
-        </Grid>
+        </StackPanel>
     </Grid>
 </Window>

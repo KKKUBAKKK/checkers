@@ -43,7 +43,7 @@ namespace checkers.ViewModels
             }
         }
 
-        public string CurrentPlayerDisplay => $"Current Player: {(_isPlayer1Turn ? "Red" : "Black")}";
+        public string CurrentPlayerDisplay => $"Current Player: {(_isPlayer1Turn ? "White" : "Black")}";
 
         public string TimeDisplay
         {
@@ -85,7 +85,7 @@ namespace checkers.ViewModels
                         Column = col,
                         Color = isDark ? "#663300" : "#FFCC99",
                         HasPiece = isDark && (row < 3 || row > 4), // Pieces on dark squares
-                        PieceColor = row < 3 ? "Black" : "Red", // Player 2 (black) at top, Player 1 (red) at bottom
+                        PieceColor = row < 3 ? "Black" : "White", // Player 2 (black) at top, Player 1 (red) at bottom
                         IsKing = false
                     };
                     
@@ -153,7 +153,7 @@ namespace checkers.ViewModels
 
         private bool IsCurrentPlayersPiece(SquareViewModel square)
         {
-            return (_isPlayer1Turn && square.PieceColor == "Red") || 
+            return (_isPlayer1Turn && square.PieceColor == "White") || 
                    (!_isPlayer1Turn && square.PieceColor == "Black");
         }
 
@@ -176,8 +176,8 @@ namespace checkers.ViewModels
             // Regular move (1 square diagonally)
             if (absRowDiff == 1)
             {
-                // Red pieces move up (negative row diff) unless kinged
-                if (from.PieceColor == "Red" && rowDiff > 0 && !from.IsKing) return false;
+                // White pieces move up (negative row diff) unless kinged
+                if (from.PieceColor == "White" && rowDiff > 0 && !from.IsKing) return false;
                 
                 // Black pieces move down (positive row diff) unless kinged
                 if (from.PieceColor == "Black" && rowDiff < 0 && !from.IsKing) return false;
@@ -188,8 +188,8 @@ namespace checkers.ViewModels
             // Jump move (2 squares diagonally)
             if (absRowDiff == 2 && absColDiff == 2)
             {
-                // Red pieces move up unless kinged
-                if (from.PieceColor == "Red" && rowDiff > 0 && !from.IsKing) return false;
+                // White pieces move up unless kinged
+                if (from.PieceColor == "White" && rowDiff > 0 && !from.IsKing) return false;
                 
                 // Black pieces move down unless kinged
                 if (from.PieceColor == "Black" && rowDiff < 0 && !from.IsKing) return false;
@@ -239,7 +239,7 @@ namespace checkers.ViewModels
             from.IsKing = false;
             
             // Check if the piece should be kinged
-            if ((to.PieceColor == "Red" && to.Row == 0) || 
+            if ((to.PieceColor == "White" && to.Row == 0) || 
                 (to.PieceColor == "Black" && to.Row == 7))
             {
                 to.IsKing = true;

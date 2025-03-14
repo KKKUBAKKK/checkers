@@ -111,7 +111,7 @@ namespace checkers.Models
                 {
                     var piece = board.GetPieceAt(row, col);
                     
-                    if (piece.Type == PieceType.Red)
+                    if (piece.Type == PieceType.White)
                     {
                         score += piece.Rank == PieceRank.King ? 3 : 1;
                         // Bonus for advancing
@@ -137,14 +137,14 @@ namespace checkers.Models
             // Bonus for winning
             if (board.IsGameOver)
             {
-                if (board.Winner == PieceType.Red)
+                if (board.Winner == PieceType.White)
                     score += 100;
                 else if (board.Winner == PieceType.Black)
                     score -= 100;
             }
             
             // Bonus for having more valid moves (mobility)
-            if (board.CurrentTurn == PieceType.Red)
+            if (board.CurrentTurn == PieceType.White)
                 score += board.GetAllValidMoves().Count / 2;
             else
                 score -= board.GetAllValidMoves().Count / 2;
