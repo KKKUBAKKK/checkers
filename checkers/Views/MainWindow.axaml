@@ -124,6 +124,7 @@
                     <ComboBoxItem>5 Minutes</ComboBoxItem>
                 </ComboBox>
 
+                <!-- TODO: Delete board rotation -->
                 <CheckBox IsChecked="{Binding RotateBoardAfterMove}" 
                          Margin="0,0,0,20">
                     Rotate Board After Move
@@ -144,6 +145,7 @@
                     Get Hint
                 </Button>
 
+                <!-- TODO: Delete bot difficulty -->
                 <TextBlock Text="Bot Difficulty:" Margin="0,0,0,5"/>
                 <UniformGrid Columns="3" Width="200" HorizontalAlignment="Left">
                     <Button Command="{Binding ChangeDifficultyCommand}" 
