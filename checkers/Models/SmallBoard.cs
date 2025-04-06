@@ -132,7 +132,7 @@ public class SmallBoard
         UInt64 all_pieces = _white | _black;
 
         // Find all the maximum captures
-        for (int i = 0; i < BoardSize; i += 2)
+        for (int i = 0; i < BoardSize; i++)
         {
             if (moveStack.Count >= 12)
                 break;
@@ -156,13 +156,14 @@ public class SmallBoard
             if ((m.End & (FirstCol | SecondCol)) == 0) {
                 if ((_isWhiteTurn || (m.Start & _kings) != 0) && (m.End << UpLeft & o) != 0 && ((m.End << (2 * UpLeft)) & ~a) != 0) {
                     SmallMove t = m.Copy();
-                    t.End = m.End << (UpLeft);
+                    t.End = m.End << (2 * UpLeft);
                     t.Captured |= (m.End << UpLeft);
                     moveStack.Push(t);
                 }
                 if ((!_isWhiteTurn || (m.Start & _kings) != 0) &&  ((m.End >> DownLeft) & o) != 0 && ((m.End >> (2 * DownLeft)) & ~a) != 0)
                 {
                     SmallMove t = m.Copy();
+                    t.End = m.End >> (2 * DownLeft);
                     t.Captured |= (m.End >> DownLeft);
                     moveStack.Push(t);
                 }
@@ -191,7 +192,7 @@ public class SmallBoard
         if (moves.Any()) return moves;
         
         // Find regular moves
-        for (int i = 0; i < BoardSize; i += 2)
+        for (int i = 0; i < BoardSize; i++)
         {
             UInt64 start = 1UL << i;
             if ((player & start) != 0)
@@ -236,13 +237,12 @@ public class SmallBoard
             _black ^= move.Start | move.End;
             _white ^= move.Captured;
         }
-
-        _kings &= _white | _black;
         
         if ((move.Start & _kings) != 0 || 
             ((move.End & LastRow) != 0 && _isWhiteTurn) || 
             ((move.End & FirstRow) != 0 && !_isWhiteTurn))
         {
+            _kings &= _white | _black;
             _kings |= move.End;
         }
         

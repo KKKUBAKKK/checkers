@@ -23,7 +23,7 @@ public partial class MainWindow : Window
     private GameController _gameController;
     private Rectangle[,] _squares;
     private Ellipse[,] _pieces;
-    private Rectangle? _selectedSquare = null;
+    private Rectangle _selectedSquare;
     private List<Rectangle> _highlightedMoves;
     private TextBlock _statusText;
     private TextBlock _hintText;
@@ -43,8 +43,6 @@ public partial class MainWindow : Window
 #if DEBUG
         this.AttachDevTools();
 #endif
-        // Explicitly set the DataContext to ensure it's properly initialized
-        // DataContext = new GameViewModel();
     }
 
     private void InitializeComponent()
@@ -227,11 +225,8 @@ public partial class MainWindow : Window
 
     private void UpdateBoardDisplay()
     {
-        // Clear any previous highlighting if not in multi-jump
-        if (!_gameController.IsMultiJumpInProgress)
-        {
-            ClearSelection();
-        }
+        // Clear any previous selections
+        ClearSelection();
         
         // Update pieces based on the board state
         for (int uiRow = 0; uiRow < BoardSize; uiRow++)
@@ -254,12 +249,12 @@ public partial class MainWindow : Window
                 {
                     pieceUI.IsVisible = true;
                     
-                    // Set the piece appearance
-                    if (piece > 0) // Player pieces - display as WHITE
+                    // Set the piece appearance consistently
+                    if (piece > 0) // White/positive pieces are player's (WHITE)
                     {
                         pieceUI.Fill = new SolidColorBrush(Colors.White);
                     }
-                    else // Opponent pieces - display as BLACK
+                    else // Black/negative pieces are opponent's (BLACK)
                     {
                         pieceUI.Fill = new SolidColorBrush(Colors.Black);
                     }
@@ -278,39 +273,13 @@ public partial class MainWindow : Window
                 }
             }
         }
-        
-        // If multi-jump is in progress, highlight the piece that must move
-        if (_gameController.IsMultiJumpInProgress && _gameController.LastJumpMove != null)
-        {
-            // Convert board position to UI position
-            int boardRow = _gameController.LastJumpMove.ToRow;
-            int boardCol = _gameController.LastJumpMove.ToCol;
-            
-            int uiRow = _gameController.BoardToUIRow(boardRow);
-            int uiCol = _gameController.BoardToUICol(boardCol);
-            
-            _selectedSquare = _squares[uiRow, uiCol];
-            _selectedSquare.Stroke = new SolidColorBrush(Colors.Yellow);
-            _selectedSquare.StrokeThickness = 3;
-            
-            // Update selected position
-            _selectedBoardRow = boardRow;
-            _selectedBoardCol = boardCol;
-            
-            // Highlight available next jump moves
-            HighlightPossibleMoves(_gameController.AvailableMoves);
-        }
     }
 
     private void UpdateGameStatus()
     {
         if (_gameController.IsPlayerTurn)
         {
-            if (_gameController.IsMultiJumpInProgress)
-            {
-                _statusText.Text = "Continue your jump sequence!";
-            }
-            else if (_gameController.AvailableMoves.Count == 0)
+            if (_gameController.AvailableMoves.Count == 0)
             {
                 _statusText.Text = "Game over! You lose.";
             }
@@ -390,72 +359,8 @@ public partial class MainWindow : Window
     // All coordinates here are board coordinates, not UI coordinates
     private void HandlePositionClick(int clickedBoardRow, int clickedBoardCol, int piece, Rectangle clickedSquare)
     {
-        // If multi-jump in progress
-        if (_gameController.IsMultiJumpInProgress)
-        {
-            // We can only move the piece that just jumped
-            var lastMove = _gameController.LastJumpMove;
-            
-            if (piece == 0) // If clicking on empty square
-            {
-                // Try to make the next jump
-                bool moveSuccessful = _gameController.TryMakeMove(lastMove.ToRow, lastMove.ToCol, clickedBoardRow, clickedBoardCol);
-                Console.WriteLine($"Tried multi-jump from ({lastMove.ToRow},{lastMove.ToCol}) to ({clickedBoardRow},{clickedBoardCol}): {(moveSuccessful ? "SUCCESS" : "FAILED")}");
-                
-                if (!moveSuccessful)
-                {
-                    // Invalid move, highlight available moves again
-                    HighlightPossibleMoves(_gameController.AvailableMoves);
-                }
-            }
-            return;
-        }
-        
-        // Regular turn (not multi-jump in progress)
-        
-        // If no piece is selected yet
-        if (_selectedSquare == null)
-        {
-            // Only allow selecting player's pieces
-            if (piece > 0)
-            {
-                // Get the available moves for this piece
-                var pieceMoves = _gameController.GetMovesForPiece(clickedBoardRow, clickedBoardCol);
-                
-                Console.WriteLine($"Available moves for this piece: {pieceMoves.Count}");
-                
-                if (pieceMoves.Any())
-                {
-                    _selectedSquare = clickedSquare;
-                    _selectedBoardRow = clickedBoardRow;
-                    _selectedBoardCol = clickedBoardCol;
-                    
-                    clickedSquare.Stroke = new SolidColorBrush(Colors.Yellow);
-                    clickedSquare.StrokeThickness = 3;
-                    
-                    // Highlight valid moves
-                    HighlightPossibleMoves(pieceMoves);
-                }
-                else
-                {
-                    Console.WriteLine("DEBUG: This piece has no available moves!");
-                    
-                    // Log all available moves for debugging
-                    Console.WriteLine("All available moves:");
-                    foreach (var move in _gameController.AvailableMoves)
-                    {
-                        int fromUIRow = _gameController.BoardToUIRow(move.FromRow);
-                        int fromUICol = _gameController.BoardToUICol(move.FromCol);
-                        int toUIRow = _gameController.BoardToUIRow(move.ToRow);
-                        int toUICol = _gameController.BoardToUICol(move.ToCol);
-                        
-                        Console.WriteLine($"UI Coords: From ({fromUIRow},{fromUICol}) to ({toUIRow},{toUICol}) - Capture: {move.IsCapture}");
-                        Console.WriteLine($"Board Coords: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}");
-                    }
-                }
-            }
-        }
-        else
+        // If a piece is selected, attempt to make a move
+        if (_selectedSquare != null)
         {
             // If clicking on the same square, deselect it
             if (clickedSquare == _selectedSquare)
@@ -464,51 +369,92 @@ public partial class MainWindow : Window
                 return;
             }
             
-            // Attempt to make a move (using the stored board coordinates)
-            bool moveSuccessful = _gameController.TryMakeMove(_selectedBoardRow, _selectedBoardCol, clickedBoardRow, clickedBoardCol);
-            Console.WriteLine($"Tried move from ({_selectedBoardRow},{_selectedBoardCol}) to ({clickedBoardRow},{clickedBoardCol}): {(moveSuccessful ? "SUCCESS" : "FAILED")}");
+            // Get the coordinates of the selected piece
+            int fromBoardRow = _selectedBoardRow;
+            int fromBoardCol = _selectedBoardCol;
             
-            if (!moveSuccessful)
+            // Attempt to make a move
+            bool moveSuccessful = _gameController.TryMakeMove(fromBoardRow, fromBoardCol, clickedBoardRow, clickedBoardCol);
+            Console.WriteLine($"Tried move from ({fromBoardRow},{fromBoardCol}) to ({clickedBoardRow},{clickedBoardCol}): {(moveSuccessful ? "SUCCESS" : "FAILED")}");
+            
+            if (!moveSuccessful && piece > 0)
             {
-                // Check if clicking on a different piece the player owns
-                if (piece > 0)
-                {
-                    ClearSelection();
-                    
-                    // Try selecting this piece instead
-                    var pieceMoves = _gameController.GetMovesForPiece(clickedBoardRow, clickedBoardCol);
-                    
-                    if (pieceMoves.Any())
-                    {
-                        _selectedSquare = clickedSquare;
-                        _selectedBoardRow = clickedBoardRow;
-                        _selectedBoardCol = clickedBoardCol;
-                        
-                        clickedSquare.Stroke = new SolidColorBrush(Colors.Yellow);
-                        clickedSquare.StrokeThickness = 3;
-                        
-                        // Highlight valid moves
-                        HighlightPossibleMoves(pieceMoves);
-                    }
-                }
+                // If we couldn't move, but clicked on another player piece, select that piece instead
+                SelectPiece(clickedBoardRow, clickedBoardCol, clickedSquare);
             }
+            
+            return;
+        }
+        
+        // If no piece is selected yet, try to select one
+        if (piece > 0) // Only allow selecting player pieces (white/positive values)
+        {
+            SelectPiece(clickedBoardRow, clickedBoardCol, clickedSquare);
         }
     }
-
-    private void HighlightPossibleMoves(List<SmallMove> moves)
+    
+    // Helper method to select a piece and highlight its moves
+    private void SelectPiece(int boardRow, int boardCol, Rectangle square)
+    {
+        // Get moves for this piece
+        var pieceMoves = _gameController.GetMovesForPiece(boardRow, boardCol);
+        
+        if (pieceMoves.Any())
+        {
+            // Clear any existing selection
+            ClearSelection();
+            
+            // Select this piece
+            _selectedSquare = square;
+            _selectedBoardRow = boardRow;
+            _selectedBoardCol = boardCol;
+            
+            // Highlight the selected piece
+            square.Stroke = new SolidColorBrush(Colors.Yellow);
+            square.StrokeThickness = 3;
+            
+            // Highlight the valid destinations
+            HighlightDestinations(pieceMoves);
+        }
+        else
+        {
+            Console.WriteLine("This piece has no available moves");
+        }
+    }
+    
+    // Highlight only the final destinations of the moves (for multi-captures, only show the end position)
+    private void HighlightDestinations(List<SmallMove> moves)
     {
         ClearHighlightedMoves();
         
         foreach (var move in moves)
         {
-            // Convert board coordinates to UI coordinates
-            int uiRow = _gameController.BoardToUIRow(move.ToRow);
-            int uiCol = _gameController.BoardToUICol(move.ToCol);
-            
-            Rectangle targetSquare = _squares[uiRow, uiCol];
-            targetSquare.Stroke = new SolidColorBrush(Colors.LimeGreen);
-            targetSquare.StrokeThickness = 3;
-            _highlightedMoves.Add(targetSquare);
+            // For multi-captures, connect the dots to show the path
+            if (move.IsCapture)
+            {
+                // For captures, we want to show the path and then the final destination
+                // This is where you would draw the path line if desired
+                
+                // For now, we'll just highlight the final destination
+                int uiRow = _gameController.BoardToUIRow(move.ToRow);
+                int uiCol = _gameController.BoardToUICol(move.ToCol);
+                
+                Rectangle targetSquare = _squares[uiRow, uiCol];
+                targetSquare.Stroke = new SolidColorBrush(Colors.LimeGreen);
+                targetSquare.StrokeThickness = 3;
+                _highlightedMoves.Add(targetSquare);
+            }
+            else
+            {
+                // For normal moves, just highlight the destination
+                int uiRow = _gameController.BoardToUIRow(move.ToRow);
+                int uiCol = _gameController.BoardToUICol(move.ToCol);
+                
+                Rectangle targetSquare = _squares[uiRow, uiCol];
+                targetSquare.Stroke = new SolidColorBrush(Colors.LimeGreen);
+                targetSquare.StrokeThickness = 3;
+                _highlightedMoves.Add(targetSquare);
+            }
         }
     }
 

@@ -14,8 +14,6 @@ public class GameController
     private SmallBoard _board;
     private Bot _bot;
     private List<SmallMove> _availableMoves;
-    private SmallMove _lastJumpMove;
-    private bool _isMultiJumpInProgress;
     private readonly HttpClient _httpClient;
     private const string OpenAiApiUrl = "https://api.openai.com/v1/chat/completions";
     private readonly string _openAiApiKey;
@@ -23,9 +21,7 @@ public class GameController
 
     public SmallBoard Board => _board;
     public bool IsPlayerTurn { get; private set; }
-    public bool IsMultiJumpInProgress => _isMultiJumpInProgress;
     public List<SmallMove> AvailableMoves => _availableMoves;
-    public SmallMove LastJumpMove => _lastJumpMove;
 
     public event EventHandler<SmallBoard> BoardUpdated;
     public event EventHandler<string> HintReceived;
@@ -37,7 +33,6 @@ public class GameController
         _httpClient = new HttpClient();
         _openAiApiKey = openAiApiKey;
         IsPlayerTurn = true;
-        _isMultiJumpInProgress = false;
         
         // Initialize the available moves
         _availableMoves = _board.GetMoves() ?? new List<SmallMove>();
@@ -51,25 +46,25 @@ public class GameController
         }
     }
 
-    // Convert UI row to board row
+    // Convert UI to board row coordinates
     public int UIToBoardRow(int uiRow)
     {
         return BoardSize - 1 - uiRow;
     }
 
-    // Convert UI column to board column 
+    // Convert UI to board column
     public int UIToBoardCol(int uiCol)
     {
         return uiCol;
     }
 
-    // Convert board row to UI row
+    // Convert board to UI row
     public int BoardToUIRow(int boardRow)
     {
         return BoardSize - 1 - boardRow;
     }
 
-    // Convert board column to UI column
+    // Convert board to UI column
     public int BoardToUICol(int boardCol)
     {
         return boardCol;
@@ -78,6 +73,9 @@ public class GameController
     // Get the piece at board coordinates
     public int GetPieceAt(int boardRow, int boardCol)
     {
+        if (!IsPlayerTurn)
+            return -1 * _board.GetPieceAt(boardRow, boardCol);
+        
         return _board.GetPieceAt(boardRow, boardCol);
     }
 
@@ -91,7 +89,7 @@ public class GameController
             .Where(m => m.FromRow == boardRow && m.FromCol == boardCol)
             .ToList();
         
-        // Debug log all moves to see what's available
+        // Debug log all moves
         Console.WriteLine($"Found {pieceMoves.Count} moves for this piece");
         foreach (var move in pieceMoves)
         {
@@ -103,50 +101,19 @@ public class GameController
 
     private void UpdateAvailableMoves()
     {
-        if (_isMultiJumpInProgress && _lastJumpMove != null)
+        // Get all available moves - SmallBoard.GetMoves already returns only max captures if available
+        _availableMoves = _board.GetMoves() ?? new List<SmallMove>();
+        
+        Console.WriteLine($"Updated available moves: {_availableMoves.Count}");
+        foreach (var move in _availableMoves)
         {
-            // During multi-jump, only get moves from the last position
-            var allMoves = _board.GetMoves() ?? new List<SmallMove>();
-            _availableMoves = allMoves
-                .Where(m => m.FromRow == _lastJumpMove.ToRow && 
-                            m.FromCol == _lastJumpMove.ToCol && 
-                            m.IsCapture)
-                .ToList();
-            
-            // If no more jumps available, end the multi-jump
-            if (_availableMoves.Count == 0)
-            {
-                _isMultiJumpInProgress = false;
-                _lastJumpMove = null;
-                SwitchTurn();
-            }
-        }
-        else
-        {
-            // Get all available moves
-            _availableMoves = _board.GetMoves() ?? new List<SmallMove>();
-            
-            Console.WriteLine($"Updated available moves: {_availableMoves.Count}");
-            foreach (var move in _availableMoves)
-            {
-                Console.WriteLine($"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}");
-            }
+            Console.WriteLine($"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}");
         }
     }
 
     public bool TryMakeMove(int fromBoardRow, int fromBoardCol, int toBoardRow, int toBoardCol)
     {
         Console.WriteLine($"TryMakeMove: From board ({fromBoardRow},{fromBoardCol}) to ({toBoardRow},{toBoardCol})");
-
-        // If multi-jump in progress, validate starting position
-        if (_isMultiJumpInProgress && _lastJumpMove != null)
-        {
-            if (fromBoardRow != _lastJumpMove.ToRow || fromBoardCol != _lastJumpMove.ToCol)
-            {
-                Console.WriteLine("Multi-jump validation failed: must start from last jump position");
-                return false; // Must continue from last jump position
-            }
-        }
 
         // Find the matching move in available moves
         var selectedMove = _availableMoves.FirstOrDefault(
@@ -160,49 +127,22 @@ public class GameController
         }
 
         Console.WriteLine($"Selected move: From ({selectedMove.FromRow},{selectedMove.FromCol}) to ({selectedMove.ToRow},{selectedMove.ToCol}) - Capture: {selectedMove.IsCapture}");
+        Console.WriteLine(_board);
 
-        // Execute the move
+        // Execute the move - this also changes whose turn it is
         _board = selectedMove.Execute(_board);
+        Console.WriteLine(_board);
 
-        // Check if it's a capture move
-        if (selectedMove.IsCapture)
-        {
-            _lastJumpMove = selectedMove;
-            
-            // Check if more jumps are possible from this position
-            var allMoves = _board.GetMoves() ?? new List<SmallMove>();
-            var furtherCaptures = allMoves
-                .Where(m => m.FromRow == toBoardRow && 
-                            m.FromCol == toBoardCol && 
-                            m.IsCapture)
-                .ToList();
-            
-            Console.WriteLine($"Further captures possible: {furtherCaptures.Count}");
-            
-            if (furtherCaptures.Any())
-            {
-                _isMultiJumpInProgress = true;
-                _availableMoves = furtherCaptures;
-                BoardUpdated?.Invoke(this, _board);
-                return true;
-            }
-        }
-
-        // No further jumps or not a capture, switch turn
-        _isMultiJumpInProgress = false;
-        _lastJumpMove = null;
-        SwitchTurn();
-        return true;
-    }
-
-    private void SwitchTurn()
-    {
+        // Toggle IsPlayerTurn since the board has switched turns
         IsPlayerTurn = !IsPlayerTurn;
         
+        // Update available moves for the next player
         UpdateAvailableMoves();
+        
+        // Notify that the board has been updated
         BoardUpdated?.Invoke(this, _board);
-
-        // If it's bot's turn, make a move
+        
+        // If it's bot's turn, make a move after a short delay
         if (!IsPlayerTurn)
         {
             Task.Run(async () => {
@@ -210,6 +150,8 @@ public class GameController
                 MakeBotMove();
             });
         }
+        
+        return true;
     }
 
     private void MakeBotMove()
@@ -227,42 +169,16 @@ public class GameController
         {
             Console.WriteLine($"Bot move: From ({botMove.FromRow},{botMove.FromCol}) to ({botMove.ToRow},{botMove.ToCol}) - Capture: {botMove.IsCapture}");
             
+            // Execute the move - this also changes whose turn it is
             _board = botMove.Execute(_board);
             
-            // Check if it's a capture and more captures are available
-            if (botMove.IsCapture)
-            {
-                var allMoves = _board.GetMoves() ?? new List<SmallMove>();
-                var furtherCaptures = allMoves
-                    .Where(m => m.FromRow == botMove.ToRow && 
-                                m.FromCol == botMove.ToCol && 
-                                m.IsCapture)
-                    .ToList();
-                
-                Console.WriteLine($"Bot further captures possible: {furtherCaptures.Count}");
-                
-                if (furtherCaptures.Any())
-                {
-                    // Continue capturing
-                    _lastJumpMove = botMove;
-                    _availableMoves = furtherCaptures;
-                    BoardUpdated?.Invoke(this, _board);
-                    
-                    // Recursively make more bot moves until no more captures
-                    Task.Run(async () => {
-                        await Task.Delay(300); // Small delay between jumps
-                        MakeBotMove();
-                    });
-                    return;
-                }
-            }
-
-            // No further captures, switch turn
-            IsPlayerTurn = true;
-            _isMultiJumpInProgress = false;
-            _lastJumpMove = null;
+            // Toggle IsPlayerTurn since the board has switched turns
+            IsPlayerTurn = !IsPlayerTurn;
             
+            // Update available moves for the player
             UpdateAvailableMoves();
+            
+            // Notify that the board has been updated
             BoardUpdated?.Invoke(this, _board);
         }
         else
@@ -332,8 +248,6 @@ public class GameController
     public void Reset()
     {
         _board = new SmallBoard();
-        _isMultiJumpInProgress = false;
-        _lastJumpMove = null;
         IsPlayerTurn = true;
         
         UpdateAvailableMoves();
