@@ -8,10 +8,10 @@ public class Bot
     private TimeSpan _moveTime;
     private static int _maxDepth = 5;
     
-    public Bot(bool isWhite, TimeSpan moveTime)
+    public Bot(bool isWhite = false, TimeSpan moveTime = default)
     {
         _isWhite = isWhite;
-        _moveTime = moveTime;
+        _moveTime = moveTime == default ? TimeSpan.FromSeconds(10) : moveTime;
     }
 
     public SmallMove? GetBestMove(SmallBoard board)

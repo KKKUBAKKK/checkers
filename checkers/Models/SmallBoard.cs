@@ -111,15 +111,6 @@ public class SmallBoard
         if (IsKing(pos))
             _kings |= piece;
     }
-    
-    public void MovePiece(Move move)
-    {
-        if (!IsEmpty(move.To) || !IsEmpty(move.From))
-            return;
-
-        ClearPiece(move.From);
-        SetPiece(move.To);
-    }
 
     public SmallBoard Copy()
     {
@@ -128,13 +119,6 @@ public class SmallBoard
         board._white = _white;
         board._black = _black;
         board._kings = _kings;
-        return board;
-    }
-    
-    public SmallBoard MakeMove(Move move)
-    {
-        var board = Copy();
-        board.MovePiece(move);
         return board;
     }
 
@@ -304,5 +288,42 @@ public class SmallBoard
         var piece = GetPositionMask(pos);
         piece &= _white | _black;
         _kings |= piece;
+    }
+    
+    public int GetPieceAt(int row, int col)
+    {
+        UInt64 mask = GetPositionMask(new Position(row, col));
+        UInt64 player = _isWhiteTurn ? _white : _black;
+        UInt64 opponent = _isWhiteTurn ? _black : _white;
+        
+        if ((player & mask & _kings) != 0)
+            return 2;
+        if ((player & mask) != 0)
+            return 1;
+        if ((opponent & mask & _kings) != 0)
+            return -2;
+        if ((opponent & mask) != 0)
+            return -1;
+        
+        return 0;
+    }
+    
+    public override string ToString()
+    {
+        // Implementation to convert the board to a string representation
+        // Used for the ChatGPT API
+        char[] board = new char[BoardSize];
+        for (int i = 0; i < BoardSize; i++)
+        {
+            var pos = new Position(i / BoardWidth, i % BoardWidth);
+            if (IsWhite(pos))
+                board[i] = IsKing(pos) ? 'W' : 'w';
+            else if (IsBlack(pos))
+                board[i] = IsKing(pos) ? 'B' : 'b';
+            else
+                board[i] = '.';
+        }
+        return string.Join(Environment.NewLine, Enumerable.Range(0, BoardWidth)
+            .Select(row => new string(board, row * BoardWidth, BoardWidth)));
     }
 }

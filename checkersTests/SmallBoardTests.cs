@@ -1,15 +1,24 @@
 using System.Numerics;
+using Xunit.Abstractions;
 
 namespace checkersTests;
 using checkers.Models;
 
 public class SmallBoardTests
 {
+    private readonly ITestOutputHelper _output;
+    
+    public SmallBoardTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+    
    [Fact]
     public void InitialBoard_ShouldHaveCorrectSetup()
     {
         // Arrange & Act
         var board = new SmallBoard();
+        _output.WriteLine(board.ToString());
         
         // Assert
         Assert.True(board.IsWhiteTurn);

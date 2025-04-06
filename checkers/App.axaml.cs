@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using checkers.Views;
+using checkers.views;
 
 namespace checkers
 {
