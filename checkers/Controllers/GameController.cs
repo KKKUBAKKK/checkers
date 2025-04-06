@@ -11,31 +11,31 @@ namespace checkers.controllers;
 
 public class GameController
 {
-    private SmallBoard _board;
+    private Board _board;
     private Bot _bot;
-    private List<SmallMove> _availableMoves;
+    private List<Move> _availableMoves;
     private readonly HttpClient _httpClient;
     private const string OpenAiApiUrl = "https://api.openai.com/v1/chat/completions";
     private readonly string _openAiApiKey;
     private const int BoardSize = 8;
 
-    public SmallBoard Board => _board;
+    public Board Board => _board;
     public bool IsPlayerTurn { get; private set; }
-    public List<SmallMove> AvailableMoves => _availableMoves;
+    public List<Move> AvailableMoves => _availableMoves;
 
-    public event EventHandler<SmallBoard> BoardUpdated;
+    public event EventHandler<Board> BoardUpdated;
     public event EventHandler<string> HintReceived;
 
     public GameController(string openAiApiKey)
     {
-        _board = new SmallBoard();
+        _board = new Board();
         _bot = new Bot();
         _httpClient = new HttpClient();
         _openAiApiKey = openAiApiKey;
         IsPlayerTurn = true;
         
         // Initialize the available moves
-        _availableMoves = _board.GetMoves() ?? new List<SmallMove>();
+        _availableMoves = _board.GetMoves() ?? new List<Move>();
         
         // Log initial state
         Console.WriteLine($"Initial board state: {_board}");
@@ -80,7 +80,7 @@ public class GameController
     }
 
     // Get available moves for a piece at the given board coordinates
-    public List<SmallMove> GetMovesForPiece(int boardRow, int boardCol)
+    public List<Move> GetMovesForPiece(int boardRow, int boardCol)
     {
         Console.WriteLine($"Checking moves for piece at board position ({boardRow},{boardCol})");
         
@@ -101,8 +101,8 @@ public class GameController
 
     private void UpdateAvailableMoves()
     {
-        // Get all available moves - SmallBoard.GetMoves already returns only max captures if available
-        _availableMoves = _board.GetMoves() ?? new List<SmallMove>();
+        // Get all available moves - Board.GetMoves already returns only max captures if available
+        _availableMoves = _board.GetMoves() ?? new List<Move>();
         
         Console.WriteLine($"Updated available moves: {_availableMoves.Count}");
         foreach (var move in _availableMoves)
@@ -247,7 +247,7 @@ public class GameController
 
     public void Reset()
     {
-        _board = new SmallBoard();
+        _board = new Board();
         IsPlayerTurn = true;
         
         UpdateAvailableMoves();

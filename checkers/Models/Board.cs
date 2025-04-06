@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace checkers.Models;
 
-public class SmallBoard
+public class Board
 {
     private const UInt64 InitialWhite   = 0x000000000055AA55;
     private const UInt64 InitialBlack   = 0xAA55AA0000000000;
@@ -52,7 +52,7 @@ public class SmallBoard
         set => _kings = value;
     }
     
-    public SmallBoard()
+    public Board()
     {
         _isWhiteTurn = true;
         _white = InitialWhite;
@@ -112,9 +112,9 @@ public class SmallBoard
             _kings |= piece;
     }
 
-    public SmallBoard Copy()
+    public Board Copy()
     {
-        var board = new SmallBoard();
+        var board = new Board();
         board._isWhiteTurn = _isWhiteTurn;
         board._white = _white;
         board._black = _black;
@@ -122,10 +122,10 @@ public class SmallBoard
         return board;
     }
 
-    public List<SmallMove> GetMoves()
+    public List<Move> GetMoves()
     {
-        List<SmallMove> moves = new List<SmallMove>();
-        Stack<SmallMove> moveStack = new Stack<SmallMove>();
+        List<Move> moves = new List<Move>();
+        Stack<Move> moveStack = new Stack<Move>();
         
         UInt64 player = _isWhiteTurn ? _white : _black;
         UInt64 opponent = _isWhiteTurn ? _black : _white;
@@ -140,7 +140,7 @@ public class SmallBoard
             UInt64 start = 1UL << i;
             if ((player & start) != 0)
             {
-                moveStack.Push(new SmallMove(start, start, 0UL));
+                moveStack.Push(new Move(start, start, 0UL));
             }
         }
         
@@ -155,14 +155,14 @@ public class SmallBoard
             
             if ((m.End & (FirstCol | SecondCol)) == 0) {
                 if ((_isWhiteTurn || (m.Start & _kings) != 0) && (m.End << UpLeft & o) != 0 && ((m.End << (2 * UpLeft)) & ~a) != 0) {
-                    SmallMove t = m.Copy();
+                    Move t = m.Copy();
                     t.End = m.End << (2 * UpLeft);
                     t.Captured |= (m.End << UpLeft);
                     moveStack.Push(t);
                 }
                 if ((!_isWhiteTurn || (m.Start & _kings) != 0) &&  ((m.End >> DownLeft) & o) != 0 && ((m.End >> (2 * DownLeft)) & ~a) != 0)
                 {
-                    SmallMove t = m.Copy();
+                    Move t = m.Copy();
                     t.End = m.End >> (2 * DownLeft);
                     t.Captured |= (m.End >> DownLeft);
                     moveStack.Push(t);
@@ -170,13 +170,13 @@ public class SmallBoard
             }
             if ((m.End & (SecondLastCol | LastCol)) == 0) {
                 if ((_isWhiteTurn || (m.Start & _kings) != 0) && ((m.End << UpRight) & o) != 0 && ((m.End << (2 * UpRight)) & ~a) != 0) {
-                    SmallMove t = m.Copy();
+                    Move t = m.Copy();
                     t.End = m.End << (2 * UpRight);
                     t.Captured |= (m.End << UpRight);
                     moveStack.Push(t);
                 }
                 if ((!_isWhiteTurn || (m.Start & _kings) != 0) && ((m.End >> DownRight) & o) != 0 && ((m.End >> (2 * DownRight)) & ~a) != 0) {
-                    SmallMove t = m.Copy();
+                    Move t = m.Copy();
                     t.End = m.End >> (2 * DownRight);
                     t.Captured |= (m.End >> DownRight);
                     moveStack.Push(t);
@@ -201,22 +201,22 @@ public class SmallBoard
                 {
                     if ((_isWhiteTurn || (start & _kings) != 0) && (start << UpLeft & ~all_pieces) != 0)
                     {
-                        moves.Add(new SmallMove(start, start << UpLeft, 0UL));
+                        moves.Add(new Move(start, start << UpLeft, 0UL));
                     }
                     if ((!_isWhiteTurn || (start & _kings) != 0) && (start >> DownLeft & ~all_pieces) != 0)
                     {
-                        moves.Add(new SmallMove(start, start >> DownLeft, 0UL));
+                        moves.Add(new Move(start, start >> DownLeft, 0UL));
                     }
                 }
                 if ((start & LastCol) == 0)
                 {
                     if ((_isWhiteTurn || (start & _kings) != 0) && (start << UpRight & ~all_pieces) != 0)
                     {
-                        moves.Add(new SmallMove(start, start << UpRight, 0UL));
+                        moves.Add(new Move(start, start << UpRight, 0UL));
                     }
                     if ((!_isWhiteTurn || (start & _kings) != 0) && (start >> DownRight & ~all_pieces) != 0)
                     {
-                        moves.Add(new SmallMove(start, start >> DownRight, 0UL));
+                        moves.Add(new Move(start, start >> DownRight, 0UL));
                     }
                 }
             }
@@ -225,7 +225,7 @@ public class SmallBoard
         return moves;
     }
 
-    public void ApplyMove(SmallMove move)
+    public void ApplyMove(Move move)
     {
         if (_isWhiteTurn)
         {

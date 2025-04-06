@@ -4,11 +4,11 @@ using Xunit.Abstractions;
 namespace checkersTests;
 using checkers.Models;
 
-public class SmallBoardTests
+public class BoardTests
 {
     private readonly ITestOutputHelper _output;
     
-    public SmallBoardTests(ITestOutputHelper output)
+    public BoardTests(ITestOutputHelper output)
     {
         _output = output;
     }
@@ -17,7 +17,7 @@ public class SmallBoardTests
     public void InitialBoard_ShouldHaveCorrectSetup()
     {
         // Arrange & Act
-        var board = new SmallBoard();
+        var board = new Board();
         _output.WriteLine(board.ToString());
         
         // Assert
@@ -33,7 +33,7 @@ public class SmallBoardTests
     public void GetMoves_InitialPosition_ShouldReturnCorrectMoves()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Act
         var moves = board.GetMoves();
@@ -46,7 +46,7 @@ public class SmallBoardTests
     public void ApplyMove_ShouldChangePlayerTurn()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         var moves = board.GetMoves();
         
         // Act
@@ -60,7 +60,7 @@ public class SmallBoardTests
     public void GetMoves_ShouldIncludeCaptures()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Set up a position where white can capture
         board.ClearPiece(new Position(5, 7));
@@ -78,7 +78,7 @@ public class SmallBoardTests
     public void ApplyMove_WithCapture_ShouldRemoveCapturedPiece()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Set up a position where white can capture
         board.ClearPiece(new Position(5, 7));
@@ -97,7 +97,7 @@ public class SmallBoardTests
     public void Copy_ShouldCreateIndependentInstance()
     {
         // Arrange
-        var originalBoard = new SmallBoard();
+        var originalBoard = new Board();
         
         // Act
         var copiedBoard = originalBoard.Copy();
@@ -114,7 +114,7 @@ public class SmallBoardTests
     public void Evaluate_ShouldReturnPositiveScoreForWhiteAdvantage()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Remove a black piece to give white an advantage
         board.ClearPiece(new Position(5, 1));
@@ -130,13 +130,13 @@ public class SmallBoardTests
     public void GetMoves_KingPiece_ShouldHaveMoreMoves()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Set up a king in the middle of the board
-        board = new SmallBoard();
+        board = new Board();
         board.ClearPiece(new Position(3, 2));
         board.SetPiece(new Position(3, 2)); // White piece
-        var kingPosition = SmallBoard.GetPositionMask(new Position(3, 2));
+        var kingPosition = Board.GetPositionMask(new Position(3, 2));
         board.Kings = kingPosition; // Make it a king (using reflection or internal field)
         
         // Act
@@ -151,7 +151,7 @@ public class SmallBoardTests
     public void IsOver_EmptyBlackPieces_ShouldReturnTrue()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Remove all black pieces
         for (int row = 5; row < 8; row++)
@@ -173,7 +173,7 @@ public class SmallBoardTests
     public void GetMoves_WithMultipleCaptures_ShouldReturnCorrectMoves()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Set up a position where white can capture multiple pieces
         board.ClearPiece(new Position(6, 6));

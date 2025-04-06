@@ -2,22 +2,22 @@ using System;
 
 namespace checkers.Models;
 
-public class SmallMove
+public class Move
 {
     public UInt64 Start;
     public UInt64 End;
     public UInt64 Captured;
     
-    public SmallMove(UInt64 start, UInt64 end, UInt64 captured)
+    public Move(UInt64 start, UInt64 end, UInt64 captured)
     {
         Start = start;
         End = end;
         Captured = captured;
     }
 
-    public SmallMove Copy()
+    public Move Copy()
     {
-        return new SmallMove(Start, End, Captured);
+        return new Move(Start, End, Captured);
     }
     
     public int CountCaptures()
@@ -55,7 +55,7 @@ public class SmallMove
     {
         get
         {
-            return SmallBoard.GetPositionFromMask(Start).Row;
+            return Board.GetPositionFromMask(Start).Row;
         }
     }
 
@@ -63,7 +63,7 @@ public class SmallMove
     {
         get
         {
-            return SmallBoard.GetPositionFromMask(Start).Col;
+            return Board.GetPositionFromMask(Start).Col;
         }
     }
 
@@ -71,18 +71,18 @@ public class SmallMove
     {
         get
         {
-            return SmallBoard.GetPositionFromMask(End).Row;
+            return Board.GetPositionFromMask(End).Row;
         }
     }
     public int ToCol
     {
         get
         {
-            return SmallBoard.GetPositionFromMask(End).Col;
+            return Board.GetPositionFromMask(End).Col;
         }
     }
 
-    public SmallBoard Execute(SmallBoard board)
+    public Board Execute(Board board)
     {
         var newBoard = board.Copy();
         newBoard.ApplyMove(this);

@@ -14,13 +14,13 @@ public class Bot
         _moveTime = moveTime == default ? TimeSpan.FromSeconds(10) : moveTime;
     }
 
-    public SmallMove? GetBestMove(SmallBoard board)
+    public Move? GetBestMove(Board board)
     {
         var moves = board.GetMoves();
         if (moves.Count == 0)
             return null;
 
-        SmallMove bestMove = null;
+        Move bestMove = null;
         int bestScore = int.MinValue;
         foreach (var move in moves)
         {
@@ -38,7 +38,7 @@ public class Bot
         return bestMove;
     }
 
-    private int AlphaBeta(SmallBoard board, int depth, int alpha, int beta, bool isMaximizing)
+    private int AlphaBeta(Board board, int depth, int alpha, int beta, bool isMaximizing)
     {
         if (depth == 0 || board.IfOver())
             return board.Evaluate();

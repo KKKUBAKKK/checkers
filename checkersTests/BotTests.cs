@@ -9,7 +9,7 @@ public class BotTests
     public void GetBestMove_ReturnsValidMove_WhenMovesAvailable()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         var bot = new Bot(true, TimeSpan.FromSeconds(1));
         
         // Act
@@ -25,7 +25,7 @@ public class BotTests
     public void GetBestMove_CapturesWhenAvailable()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Setup a board where a capture is available
         board.ClearPiece(new Position(5, 1));
@@ -45,7 +45,7 @@ public class BotTests
     public void GetBestMove_PrefersCaptureOverRegularMove()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Setup a position where both regular moves and captures are available
         board.ClearPiece(new Position(5, 3));
@@ -65,7 +65,7 @@ public class BotTests
     // public void GetBestMove_MovesTowardKinging_WhenNoCaptures()
     // {
     //     // Arrange
-    //     var board = new SmallBoard();
+    //     var board = new Board();
     //     
     //     // Setup a position where white is about to king
     //     // Clear all pieces to simplify the board
@@ -89,7 +89,7 @@ public class BotTests
     //     // Assert
     //     Assert.NotNull(move);
     //     // The move should be to promote the piece to king (moving to row 7)
-    //     var endPos = SmallBoard.GetPositionFromMask(move.End);
+    //     var endPos = Board.GetPositionFromMask(move.End);
     //     Assert.Equal(7, endPos.Row);
     // }
     
@@ -97,7 +97,7 @@ public class BotTests
     public void GetBestMove_ReturnsNull_WhenNoMovesAvailable()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Clear all pieces of the current player to ensure no moves
         for (int i = 0; i < 64; i++)
@@ -123,10 +123,10 @@ public class BotTests
     public void GetBestMove_ProtectsKings_WhenThreatened()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Setup a position where a white king is threatened by a black piece
-        board = new SmallBoard();
+        board = new Board();
         // Clear all pieces
         for (int i = 0; i < 64; i++)
         {
@@ -158,7 +158,7 @@ public class BotTests
         // After the move, the king should not be capturable
         var blackMoves = newBoard.GetMoves();
         var kingPosition = new Position(4, 4);
-        bool kingCaptured = blackMoves.Any(m => (m.Captured & SmallBoard.GetPositionMask(kingPosition)) != 0);
+        bool kingCaptured = blackMoves.Any(m => (m.Captured & Board.GetPositionMask(kingPosition)) != 0);
         
         Assert.False(kingCaptured);
     }
@@ -167,7 +167,7 @@ public class BotTests
     public void AlphaBeta_ProducesDifferentResults_AtDifferentDepths()
     {
         // Arrange
-        var board = new SmallBoard();
+        var board = new Board();
         
         // Create two bots with different search depths by using reflection
         var shallowBot = new Bot(true, TimeSpan.FromSeconds(1));

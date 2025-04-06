@@ -200,7 +200,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnBoardUpdated(object sender, SmallBoard board)
+    private void OnBoardUpdated(object sender, Board board)
     {
         Dispatcher.UIThread.InvokeAsync(() => {
             UpdateBoardDisplay();
@@ -423,7 +423,7 @@ public partial class MainWindow : Window
     }
     
     // Highlight only the final destinations of the moves (for multi-captures, only show the end position)
-    private void HighlightDestinations(List<SmallMove> moves)
+    private void HighlightDestinations(List<Move> moves)
     {
         ClearHighlightedMoves();
         
