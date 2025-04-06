@@ -34,11 +34,15 @@ public partial class MainWindow : Window
     private int _selectedBoardCol = -1;
         
     // Configuration
-    private string _openAiApiKey = "your-api-key-here"; // Replace with your OpenAI API key
+    private string _openAiApiKey; // Replace with your OpenAI API key
     
     public MainWindow()
     {
         InitializeComponent();
+        
+        _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? 
+                        "your-api-key-here";
+        
         InitializeGame();
 #if DEBUG
         this.AttachDevTools();

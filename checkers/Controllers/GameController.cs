@@ -212,8 +212,8 @@ public class GameController
                 model = "gpt-4",
                 messages = new[]
                 {
-                    new { role = "system", content = "You are a checkers expert assistant. Provide a helpful hint for the next move without being too obvious about the best move." },
-                    new { role = "user", content = $"I'm playing checkers and need a hint. Here's my current board state:\n\n{boardState}\n\nThese are my available moves:\n{availableMovesText}\n\nGive me a short, helpful hint about what I should consider when making my next move. If you can suggest a specific move, describe the starting and ending position." }
+                    new { role = "system", content = "You are a checkers expert assistant. Provide a helpful hint for the next move." },
+                    new { role = "user", content = $"I'm playing checkers as white player and need a hint. Here's my current board state:\n\n{boardState}\n\nThese are my available moves:\n{availableMovesText}\n\nGive me a short, helpful hint about what I should consider when making my next move. If you can suggest a specific move, describe the starting and ending position." }
                 },
                 max_tokens = 150
             };
@@ -227,6 +227,8 @@ public class GameController
 
             var response = await _httpClient.PostAsync(OpenAiApiUrl, content);
             var responseJson = await response.Content.ReadAsStringAsync();
+            
+            Console.WriteLine($"API Response: {responseJson}");
             
             // Parse the response
             using JsonDocument doc = JsonDocument.Parse(responseJson);
