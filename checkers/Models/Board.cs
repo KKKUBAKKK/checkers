@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 namespace checkers.Models;
 
@@ -310,8 +311,7 @@ public class Board
     
     public override string ToString()
     {
-        // Implementation to convert the board to a string representation
-        // Used for the ChatGPT API
+        // Create board representation
         char[] board = new char[BoardSize];
         for (int i = 0; i < BoardSize; i++)
         {
@@ -323,7 +323,29 @@ public class Board
             else
                 board[i] = '.';
         }
-        return string.Join(Environment.NewLine, Enumerable.Range(0, BoardWidth)
-            .Select(row => new string(board, row * BoardWidth, BoardWidth)));
+    
+        // Build formatted output
+        StringBuilder sb = new StringBuilder();
+    
+        // Process rows in reverse (from 7 to 0)
+        for (int row = BoardWidth - 1; row >= 0; row--)
+        {
+            // Add row number label (8 to 1)
+            sb.Append($"{row + 1} ");
+        
+            // Add pieces for this row with spaces between them
+            for (int col = 0; col < BoardWidth; col++)
+            {
+                sb.Append(board[row * BoardWidth + col]);
+                sb.Append(' ');
+            }
+        
+            sb.AppendLine();
+        }
+    
+        // Add column labels at the bottom
+        sb.Append("  A B C D E F G H");
+    
+        return sb.ToString();
     }
 }

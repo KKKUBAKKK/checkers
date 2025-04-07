@@ -74,6 +74,18 @@ public class GameController
     {
         return BoardSize - 1 - boardRow;
     }
+    
+    // Convert board to GPT row
+    public string BoardToGptRow(int boardRow)
+    {
+        return (boardRow + 1).ToString();
+    }
+    
+    // Convert board to GPT column
+    public string BoardToGptCol(int boardCol)
+    {
+        return ((char) ('A' + boardCol)).ToString();
+    }
 
     // Convert board to UI column
     public int BoardToUICol(int boardCol)
@@ -207,7 +219,7 @@ public class GameController
             
             // Create move descriptions for available moves
             var moveDescriptions = _availableMoves.Select(m => {
-                string desc = $"From ({BoardToUIRow(m.FromRow)},{BoardToUICol(m.FromCol)}) to ({BoardToUIRow(m.ToRow)},{BoardToUICol(m.ToCol)})";
+                string desc = $"From ({BoardToGptRow(m.FromRow)},{BoardToGptCol(m.FromCol)}) to ({BoardToGptRow(m.ToRow)},{BoardToGptCol(m.ToCol)})";
                 if (m.IsCapture)
                 {
                     desc += " - CAPTURE";
@@ -223,8 +235,8 @@ public class GameController
                 model = "gpt-4",
                 messages = new[]
                 {
-                    new { role = "system", content = "You are a checkers expert assistant. Provide a helpful hint for the next move." },
-                    new { role = "user", content = $"I'm playing checkers as white player and need a hint. Here's my current board state:\n\n{boardState}\n\nThese are my available moves:\n{availableMovesText}\n\nGive me a short, helpful hint about what I should consider when making my next move. If you can suggest a specific move, describe the starting and ending position." }
+                    new { role = "system", content = "You are a checkers expert assistant. Provide concise, actionable hints. Board coordinates are (row,column) starting from bottom-left corner (0,0) where white pieces begin. Limit your response to 2-3 sentences." },
+                    new { role = "user", content = $"I'm playing as white and need a hint for my next move. Current board:\n\n{boardState}\n\nAvailable moves:\n{availableMovesText}\n\nWhat's my best move? If suggesting a specific move, use UI coordinates shown in the available moves list." }
                 },
                 max_tokens = 150
             };

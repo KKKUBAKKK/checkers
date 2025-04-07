@@ -15,6 +15,7 @@ using Avalonia.Input;
 
 
 namespace checkers.views;
+
 public partial class MainWindow : Window
 {
     private const int BoardSize = 8;
@@ -34,7 +35,7 @@ public partial class MainWindow : Window
     private int _selectedBoardCol = -1;
         
     // Configuration
-    private string _openAiApiKey; // Replace with your OpenAI API key
+    private string _openAiApiKey;
     
     public MainWindow()
     {
@@ -76,7 +77,7 @@ public partial class MainWindow : Window
         LastChildFill = true,
         HorizontalAlignment = HorizontalAlignment.Center,
         VerticalAlignment = VerticalAlignment.Center,
-        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)) // Dark grey color
+        Background = null
     };
 
     // Create main grid with some spacing
@@ -87,20 +88,131 @@ public partial class MainWindow : Window
         VerticalAlignment = VerticalAlignment.Center
     };
 
-    // Create board panel with border
-    Border boardBorder = new Border
+    // Create board panel with border and labels
+Grid boardGrid = new Grid();
+
+// Create rows and columns for the grid
+boardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) }); // Top labels
+boardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(BoardSize * SquareSize) }); // Board
+boardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) }); // Bottom labels
+
+boardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) }); // Left labels
+boardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(BoardSize * SquareSize) }); // Board
+boardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) }); // Right labels
+
+// Create the board canvas
+Canvas boardPanel = new Canvas
+{
+    Width = BoardSize * SquareSize,
+    Height = BoardSize * SquareSize,
+    Background = new SolidColorBrush(Colors.LightGray)
+};
+
+// Add the board canvas to the grid
+Grid.SetRow(boardPanel, 1);
+Grid.SetColumn(boardPanel, 1);
+boardGrid.Children.Add(boardPanel);
+
+// Create column headers grid (A-H)
+Grid topLabelsGrid = new Grid();
+Grid bottomLabelsGrid = new Grid();
+
+// Add columns to the label grids
+for (int i = 0; i < BoardSize; i++)
+{
+    topLabelsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(SquareSize) });
+    bottomLabelsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(SquareSize) });
+}
+
+// Add labels to the column grids
+for (int col = 0; col < BoardSize; col++)
+{
+    TextBlock topLabel = new TextBlock
     {
-        BorderBrush = new SolidColorBrush(Colors.DarkGray),
-        BorderThickness = new Thickness(2),
-        Margin = new Thickness(0, 0, 10, 0),
-        Child = new Canvas
-        {
-            Width = BoardSize * SquareSize,
-            Height = BoardSize * SquareSize,
-            Background = new SolidColorBrush(Colors.LightGray)
-        }
+        Text = ((char)('A' + col)).ToString(),
+        FontSize = 12,
+        Foreground = new SolidColorBrush(Colors.White),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center
     };
-    Canvas boardPanel = (Canvas)boardBorder.Child;
+    Grid.SetColumn(topLabel, col);
+    topLabelsGrid.Children.Add(topLabel);
+
+    TextBlock bottomLabel = new TextBlock
+    {
+        Text = ((char)('A' + col)).ToString(),
+        FontSize = 12,
+        Foreground = new SolidColorBrush(Colors.White),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    Grid.SetColumn(bottomLabel, col);
+    bottomLabelsGrid.Children.Add(bottomLabel);
+}
+
+// Add label grids to main grid
+Grid.SetRow(topLabelsGrid, 0);
+Grid.SetColumn(topLabelsGrid, 1);
+boardGrid.Children.Add(topLabelsGrid);
+
+Grid.SetRow(bottomLabelsGrid, 2);
+Grid.SetColumn(bottomLabelsGrid, 1);
+boardGrid.Children.Add(bottomLabelsGrid);
+
+// Create row labels grid (1-8)
+Grid leftLabelsGrid = new Grid();
+Grid rightLabelsGrid = new Grid();
+
+// Add rows to the label grids
+for (int i = 0; i < BoardSize; i++)
+{
+    leftLabelsGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(SquareSize) });
+    rightLabelsGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(SquareSize) });
+}
+
+// Add labels to the row grids
+for (int row = 0; row < BoardSize; row++)
+{
+    TextBlock leftLabel = new TextBlock
+    {
+        Text = (BoardSize - row).ToString(),
+        FontSize = 12,
+        Foreground = new SolidColorBrush(Colors.White),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    Grid.SetRow(leftLabel, row);
+    leftLabelsGrid.Children.Add(leftLabel);
+
+    TextBlock rightLabel = new TextBlock
+    {
+        Text = (BoardSize - row).ToString(),
+        FontSize = 12,
+        Foreground = new SolidColorBrush(Colors.White),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    Grid.SetRow(rightLabel, row);
+    rightLabelsGrid.Children.Add(rightLabel);
+}
+
+// Add label grids to main grid
+Grid.SetRow(leftLabelsGrid, 1);
+Grid.SetColumn(leftLabelsGrid, 0);
+boardGrid.Children.Add(leftLabelsGrid);
+
+Grid.SetRow(rightLabelsGrid, 1);
+Grid.SetColumn(rightLabelsGrid, 2);
+boardGrid.Children.Add(rightLabelsGrid);
+
+// Put everything in a border
+Border boardBorder = new Border
+{
+    BorderBrush = new SolidColorBrush(Colors.DarkGray),
+    BorderThickness = new Thickness(2),
+    Margin = new Thickness(0, 0, 10, 0),
+    Child = boardGrid
+};
 
     // Create control panel with visual styling
     Border controlBorder = new Border
@@ -109,7 +221,7 @@ public partial class MainWindow : Window
         BorderThickness = new Thickness(2),
         Padding = new Thickness(15),
         Margin = new Thickness(10, 0, 0, 0),
-        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
+        Background = null,
         Child = new StackPanel
         {
             Orientation = Orientation.Vertical,
@@ -118,37 +230,15 @@ public partial class MainWindow : Window
         }
     };
     StackPanel controlPanel = (StackPanel)controlBorder.Child;
-
-    // Add new game button
-    Button newGameButton = new Button
-    {
-        Content = "New Game",
-        Padding = new Thickness(10, 5, 10, 5),
-        Margin = new Thickness(0, 0, 0, 10),
-        HorizontalAlignment = HorizontalAlignment.Stretch
-    };
-    newGameButton.Click += (s, e) => _gameController.Reset();
-    controlPanel.Children.Add(newGameButton);
-
-    // Add get hint button
-    _hintButton = new Button
-    {
-        Content = "Get Hint from ChatGPT",
-        Padding = new Thickness(10, 5, 10, 5),
-        Margin = new Thickness(0, 0, 0, 10),
-        HorizontalAlignment = HorizontalAlignment.Stretch
-    };
-    _hintButton.Click += async (s, e) => await GetHint();
-    controlPanel.Children.Add(_hintButton);
-
+    
     // Add status text with border
     Border statusBorder = new Border
     {
-        BorderBrush = new SolidColorBrush(Colors.LightGray),
+        BorderBrush = null,
         BorderThickness = new Thickness(1),
         Padding = new Thickness(10),
         Margin = new Thickness(0, 10, 0, 10),
-        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
+        Background = null,
         Child = new TextBlock
         {
             Text = "Your turn",
@@ -158,26 +248,7 @@ public partial class MainWindow : Window
     };
     _statusText = (TextBlock)statusBorder.Child;
     controlPanel.Children.Add(statusBorder);
-
-    // Add hint text with border
-    Border hintBorder = new Border
-    {
-        BorderBrush = new SolidColorBrush(Colors.LightGray),
-        BorderThickness = new Thickness(1),
-        Padding = new Thickness(10),
-        Margin = new Thickness(0, 0, 0, 10),
-        MinHeight = 100,
-        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
-        Child = new TextBlock
-        {
-            Text = "No hint available yet",
-            FontSize = 14,
-            TextWrapping = TextWrapping.Wrap
-        }
-    };
-    _hintText = (TextBlock)hintBorder.Child;
-    controlPanel.Children.Add(hintBorder);
-
+    
     // Add thinking time control
     StackPanel thinkingTimePanel = new StackPanel
     {
@@ -214,7 +285,48 @@ public partial class MainWindow : Window
     thinkingTimePanel.Children.Add(thinkingTimeSlider);
     controlPanel.Children.Add(thinkingTimePanel);
 
-    // Create the board squares and pieces (same code as before)
+    // Add new game button
+    Button newGameButton = new Button
+    {
+        Content = "New Game",
+        Padding = new Thickness(10, 5, 10, 5),
+        Margin = new Thickness(0, 0, 0, 10),
+        HorizontalAlignment = HorizontalAlignment.Stretch
+    };
+    newGameButton.Click += (s, e) => _gameController.Reset();
+    controlPanel.Children.Add(newGameButton);
+
+    // Add get hint button
+    _hintButton = new Button
+    {
+        Content = "Get Hint from ChatGPT",
+        Padding = new Thickness(10, 5, 10, 5),
+        Margin = new Thickness(0, 0, 0, 10),
+        HorizontalAlignment = HorizontalAlignment.Stretch
+    };
+    _hintButton.Click += async (s, e) => await GetHint();
+    controlPanel.Children.Add(_hintButton);
+
+    // Add hint text with border
+    Border hintBorder = new Border
+    {
+        BorderBrush = null,
+        BorderThickness = new Thickness(1),
+        Padding = new Thickness(10),
+        Margin = new Thickness(0, 0, 0, 10),
+        MinHeight = 100,
+        Background = null,
+        Child = new TextBlock
+        {
+            Text = "No hint available yet",
+            FontSize = 14,
+            TextWrapping = TextWrapping.Wrap
+        }
+    };
+    _hintText = (TextBlock)hintBorder.Child;
+    controlPanel.Children.Add(hintBorder);
+
+    // Create the board squares and pieces
     for (int row = 0; row < BoardSize; row++)
     {
         for (int col = 0; col < BoardSize; col++)
