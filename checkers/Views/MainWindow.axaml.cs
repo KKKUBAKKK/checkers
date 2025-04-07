@@ -38,6 +38,10 @@ public partial class MainWindow : Window
     
     public MainWindow()
     {
+        this.TransparencyLevelHint = new List<WindowTransparencyLevel> { WindowTransparencyLevel.AcrylicBlur };
+        this.Background = new SolidColorBrush(Color.FromArgb(200, 20, 20, 20));
+        this.ExtendClientAreaToDecorationsHint = true;
+        
         InitializeComponent();
         
         _openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? 
@@ -54,181 +58,228 @@ public partial class MainWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
     
-    private void InitializeGame()
+    private void InitializeGame() 
     {
-        // Initialize the game controller
-        _gameController = new GameController(_openAiApiKey);
-        _gameController.BoardUpdated += OnBoardUpdated;
-        _gameController.HintReceived += OnHintReceived;
-        
-        // Initialize UI
-        _squares = new Rectangle[BoardSize, BoardSize];
-        _pieces = new Ellipse[BoardSize, BoardSize];
-        _highlightedMoves = new List<Rectangle>();
-        
-        // Create main grid
-        Grid mainGrid = new Grid();
-        
-        // Create board panel
-        Canvas boardPanel = new Canvas
+    // Initialize the game controller
+    _gameController = new GameController(_openAiApiKey);
+    _gameController.BoardUpdated += OnBoardUpdated;
+    _gameController.HintReceived += OnHintReceived;
+
+    // Initialize UI
+    _squares = new Rectangle[BoardSize, BoardSize];
+    _pieces = new Ellipse[BoardSize, BoardSize];
+    _highlightedMoves = new List<Rectangle>();
+
+    // Create root DockPanel for centering
+    DockPanel rootPanel = new DockPanel
+    {
+        LastChildFill = true,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center,
+        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)) // Dark grey color
+    };
+
+    // Create main grid with some spacing
+    Grid mainGrid = new Grid
+    {
+        Margin = new Thickness(20),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+
+    // Create board panel with border
+    Border boardBorder = new Border
+    {
+        BorderBrush = new SolidColorBrush(Colors.DarkGray),
+        BorderThickness = new Thickness(2),
+        Margin = new Thickness(0, 0, 10, 0),
+        Child = new Canvas
         {
             Width = BoardSize * SquareSize,
             Height = BoardSize * SquareSize,
             Background = new SolidColorBrush(Colors.LightGray)
-        };
-        
-        // Create control panel
-        StackPanel controlPanel = new StackPanel
+        }
+    };
+    Canvas boardPanel = (Canvas)boardBorder.Child;
+
+    // Create control panel with visual styling
+    Border controlBorder = new Border
+    {
+        BorderBrush = new SolidColorBrush(Colors.DarkGray),
+        BorderThickness = new Thickness(2),
+        Padding = new Thickness(15),
+        Margin = new Thickness(10, 0, 0, 0),
+        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
+        Child = new StackPanel
         {
             Orientation = Orientation.Vertical,
-            Margin = new Thickness(20)
-        };
-        
-        // Add new game button
-        Button newGameButton = new Button
-        {
-            Content = "New Game",
-            Padding = new Thickness(10, 5, 10, 5),
-            Margin = new Thickness(0, 0, 0, 10)
-        };
-        newGameButton.Click += (s, e) => _gameController.Reset();
-        controlPanel.Children.Add(newGameButton);
-        
-        // Add get hint button
-        _hintButton = new Button
-        {
-            Content = "Get Hint from ChatGPT",
-            Padding = new Thickness(10, 5, 10, 5),
-            Margin = new Thickness(0, 0, 0, 10)
-        };
-        _hintButton.Click += async (s, e) => await GetHint();
-        controlPanel.Children.Add(_hintButton);
-        
-        // Add status text
-        _statusText = new TextBlock
+            Width = 300,
+            HorizontalAlignment = HorizontalAlignment.Center
+        }
+    };
+    StackPanel controlPanel = (StackPanel)controlBorder.Child;
+
+    // Add new game button
+    Button newGameButton = new Button
+    {
+        Content = "New Game",
+        Padding = new Thickness(10, 5, 10, 5),
+        Margin = new Thickness(0, 0, 0, 10),
+        HorizontalAlignment = HorizontalAlignment.Stretch
+    };
+    newGameButton.Click += (s, e) => _gameController.Reset();
+    controlPanel.Children.Add(newGameButton);
+
+    // Add get hint button
+    _hintButton = new Button
+    {
+        Content = "Get Hint from ChatGPT",
+        Padding = new Thickness(10, 5, 10, 5),
+        Margin = new Thickness(0, 0, 0, 10),
+        HorizontalAlignment = HorizontalAlignment.Stretch
+    };
+    _hintButton.Click += async (s, e) => await GetHint();
+    controlPanel.Children.Add(_hintButton);
+
+    // Add status text with border
+    Border statusBorder = new Border
+    {
+        BorderBrush = new SolidColorBrush(Colors.LightGray),
+        BorderThickness = new Thickness(1),
+        Padding = new Thickness(10),
+        Margin = new Thickness(0, 10, 0, 10),
+        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
+        Child = new TextBlock
         {
             Text = "Your turn",
-            Margin = new Thickness(0, 10, 0, 10),
-            FontSize = 16
-        };
-        controlPanel.Children.Add(_statusText);
-        
-        // Add hint text
-        _hintText = new TextBlock
+            FontSize = 16,
+            HorizontalAlignment = HorizontalAlignment.Center
+        }
+    };
+    _statusText = (TextBlock)statusBorder.Child;
+    controlPanel.Children.Add(statusBorder);
+
+    // Add hint text with border
+    Border hintBorder = new Border
+    {
+        BorderBrush = new SolidColorBrush(Colors.LightGray),
+        BorderThickness = new Thickness(1),
+        Padding = new Thickness(10),
+        Margin = new Thickness(0, 0, 0, 10),
+        MinHeight = 100,
+        Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
+        Child = new TextBlock
         {
             Text = "No hint available yet",
-            Margin = new Thickness(0, 10, 0, 10),
             FontSize = 14,
-            TextWrapping = TextWrapping.Wrap,
-            MaxWidth = 300
-        };
-        controlPanel.Children.Add(_hintText);
-        
-        StackPanel thinkingTimePanel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Margin = new Thickness(0, 10, 0, 10)
-        };
-
-        TextBlock thinkingTimeLabel = new TextBlock
-        {
-            Text = "Bot thinking time: 5s",
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 10, 0)
-        };
-
-        Slider thinkingTimeSlider = new Slider
-        {
-            Minimum = 1,
-            Maximum = 20,
-            Value = 5,
-            Width = 150,
-            TickFrequency = 1,
-            IsSnapToTickEnabled = true,
-            TickPlacement = TickPlacement.BottomRight
-        };
-
-        thinkingTimeSlider.ValueChanged += (s, e) =>
-        {
-            int seconds = (int)e.NewValue;
-            thinkingTimeLabel.Text = $"Bot thinking time: {seconds}s";
-            _gameController.BotThinkingTime = TimeSpan.FromSeconds(seconds);
-        };
-
-        thinkingTimePanel.Children.Add(thinkingTimeLabel);
-        thinkingTimePanel.Children.Add(thinkingTimeSlider);
-        controlPanel.Children.Add(thinkingTimePanel);
-        
-        // Create the board squares and pieces
-        for (int row = 0; row < BoardSize; row++)
-        {
-            for (int col = 0; col < BoardSize; col++)
-            {
-                // Create square
-                Rectangle square = new Rectangle
-                {
-                    Width = SquareSize,
-                    Height = SquareSize,
-                    Fill = (row + col) % 2 == 0 
-                        ? new SolidColorBrush(Colors.Wheat) 
-                        : new SolidColorBrush(Colors.SaddleBrown)
-                };
-                
-                // Store coordinates as attached property
-                square.SetValue(Grid.RowProperty, row);
-                square.SetValue(Grid.ColumnProperty, col);
-                
-                Canvas.SetLeft(square, col * SquareSize);
-                Canvas.SetTop(square, row * SquareSize);
-                boardPanel.Children.Add(square);
-                _squares[row, col] = square;
-                
-                // Add pointer pressed event to squares
-                square.PointerPressed += SquareClicked;
-                
-                // Create piece (initially invisible)
-                Ellipse piece = new Ellipse
-                {
-                    Width = SquareSize * 0.8,
-                    Height = SquareSize * 0.8,
-                    IsVisible = false,
-                    Stroke = new SolidColorBrush(Colors.Black),
-                    StrokeThickness = 2
-                };
-                
-                // Store coordinates in the piece
-                piece.SetValue(Grid.RowProperty, row);
-                piece.SetValue(Grid.ColumnProperty, col);
-                
-                Canvas.SetLeft(piece, col * SquareSize + SquareSize * 0.1);
-                Canvas.SetTop(piece, row * SquareSize + SquareSize * 0.1);
-                boardPanel.Children.Add(piece);
-                _pieces[row, col] = piece;
-                
-                // Add pointer pressed event to pieces as well
-                piece.PointerPressed += PieceClicked;
-            }
+            TextWrapping = TextWrapping.Wrap
         }
-        
-        // Add board and controls to main grid
-        Grid.SetColumn(boardPanel, 0);
-        Grid.SetColumn(controlPanel, 1);
-        
-        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(BoardSize * SquareSize) });
-        mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
-        
-        mainGrid.Children.Add(boardPanel);
-        mainGrid.Children.Add(controlPanel);
-        
-        // Set the main content
-        this.Content = mainGrid;
-        
-        // Add debug logging of available moves
-        LogAvailableMoves();
-        
-        // Update the board
-        UpdateBoardDisplay();
+    };
+    _hintText = (TextBlock)hintBorder.Child;
+    controlPanel.Children.Add(hintBorder);
+
+    // Add thinking time control
+    StackPanel thinkingTimePanel = new StackPanel
+    {
+        Orientation = Orientation.Vertical,
+        Margin = new Thickness(0, 10, 0, 10)
+    };
+
+    TextBlock thinkingTimeLabel = new TextBlock
+    {
+        Text = "Bot thinking time: 5s",
+        Margin = new Thickness(0, 0, 0, 5),
+        HorizontalAlignment = HorizontalAlignment.Center
+    };
+
+    Slider thinkingTimeSlider = new Slider
+    {
+        Minimum = 1,
+        Maximum = 20,
+        Value = 5,
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        TickFrequency = 1,
+        IsSnapToTickEnabled = true,
+        TickPlacement = TickPlacement.BottomRight
+    };
+
+    thinkingTimeSlider.ValueChanged += (s, e) =>
+    {
+        int seconds = (int)e.NewValue;
+        thinkingTimeLabel.Text = $"Bot thinking time: {seconds}s";
+        _gameController.BotThinkingTime = TimeSpan.FromSeconds(seconds);
+    };
+
+    thinkingTimePanel.Children.Add(thinkingTimeLabel);
+    thinkingTimePanel.Children.Add(thinkingTimeSlider);
+    controlPanel.Children.Add(thinkingTimePanel);
+
+    // Create the board squares and pieces (same code as before)
+    for (int row = 0; row < BoardSize; row++)
+    {
+        for (int col = 0; col < BoardSize; col++)
+        {
+            // Create square
+            Rectangle square = new Rectangle
+            {
+                Width = SquareSize,
+                Height = SquareSize,
+                Fill = (row + col) % 2 == 0
+                    ? new SolidColorBrush(Colors.Wheat)
+                    : new SolidColorBrush(Colors.SaddleBrown)
+            };
+
+            square.SetValue(Grid.RowProperty, row);
+            square.SetValue(Grid.ColumnProperty, col);
+
+            Canvas.SetLeft(square, col * SquareSize);
+            Canvas.SetTop(square, row * SquareSize);
+            boardPanel.Children.Add(square);
+            _squares[row, col] = square;
+
+            square.PointerPressed += SquareClicked;
+
+            // Create piece (initially invisible)
+            Ellipse piece = new Ellipse
+            {
+                Width = SquareSize * 0.8,
+                Height = SquareSize * 0.8,
+                IsVisible = false,
+                Stroke = new SolidColorBrush(Colors.Black),
+                StrokeThickness = 2
+            };
+
+            piece.SetValue(Grid.RowProperty, row);
+            piece.SetValue(Grid.ColumnProperty, col);
+
+            Canvas.SetLeft(piece, col * SquareSize + SquareSize * 0.1);
+            Canvas.SetTop(piece, row * SquareSize + SquareSize * 0.1);
+            boardPanel.Children.Add(piece);
+            _pieces[row, col] = piece;
+
+            piece.PointerPressed += PieceClicked;
+        }
     }
+
+    // Add board and controls to main grid
+    mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+    mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+    Grid.SetColumn(boardBorder, 0);
+    Grid.SetColumn(controlBorder, 1);
+
+    mainGrid.Children.Add(boardBorder);
+    mainGrid.Children.Add(controlBorder);
+
+    // Add the main grid to the root panel
+    rootPanel.Children.Add(mainGrid);
+
+    // Set the main content
+    this.Content = rootPanel;
+
+    // Update the board
+    UpdateBoardDisplay();
+}
 
     private void LogAvailableMoves()
     {
