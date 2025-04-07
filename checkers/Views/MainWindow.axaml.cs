@@ -10,8 +10,8 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
-using checkers.controllers;
 using checkers.Models;
+using checkers.ViewModels;
 
 namespace checkers.views;
 
@@ -20,7 +20,7 @@ public partial class MainWindow : Window
     private const int BoardSize = 8;
     private const int SquareSize = 60;
 
-    private GameController _gameController;
+    private GameViewModel _gameViewModel;
     private Rectangle[,] _squares;
     private Ellipse[,] _pieces;
     private Rectangle _selectedSquare;
@@ -63,9 +63,9 @@ public partial class MainWindow : Window
     private void InitializeGame()
     {
         // Initialize the game controller
-        _gameController = new GameController(_openAiApiKey);
-        _gameController.BoardUpdated += OnBoardUpdated;
-        _gameController.HintReceived += OnHintReceived;
+        _gameViewModel = new GameViewModel(_openAiApiKey);
+        _gameViewModel.BoardUpdated += OnBoardUpdated;
+        _gameViewModel.HintReceived += OnHintReceived;
 
         // Initialize UI
         _squares = new Rectangle[BoardSize, BoardSize];
@@ -291,7 +291,7 @@ public partial class MainWindow : Window
         {
             int seconds = (int)e.NewValue;
             thinkingTimeLabel.Text = $"Bot thinking time: {seconds}s";
-            _gameController.BotThinkingTime = TimeSpan.FromSeconds(seconds);
+            _gameViewModel.BotThinkingTime = TimeSpan.FromSeconds(seconds);
         };
 
         thinkingTimePanel.Children.Add(thinkingTimeLabel);
@@ -306,7 +306,7 @@ public partial class MainWindow : Window
             Margin = new Thickness(0, 0, 0, 10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        newGameButton.Click += (s, e) => _gameController.Reset();
+        newGameButton.Click += (s, e) => _gameViewModel.Reset();
         controlPanel.Children.Add(newGameButton);
 
         // Add get hint button
@@ -410,7 +410,7 @@ public partial class MainWindow : Window
     private void LogAvailableMoves()
     {
         Console.WriteLine("Available moves at start:");
-        foreach (var move in _gameController.AvailableMoves)
+        foreach (var move in _gameViewModel.AvailableMoves)
         {
             Console.WriteLine(
                 $"From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
@@ -427,7 +427,7 @@ public partial class MainWindow : Window
 
             // Log available moves after board update
             Console.WriteLine("Available moves after update:");
-            foreach (var move in _gameController.AvailableMoves)
+            foreach (var move in _gameViewModel.AvailableMoves)
             {
                 Console.WriteLine(
                     $"From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
@@ -456,11 +456,11 @@ public partial class MainWindow : Window
             for (int uiCol = 0; uiCol < BoardSize; uiCol++)
             {
                 // Convert UI to board coordinates
-                int boardRow = _gameController.UIToBoardRow(uiRow);
-                int boardCol = _gameController.UIToBoardCol(uiCol);
+                int boardRow = _gameViewModel.UIToBoardRow(uiRow);
+                int boardCol = _gameViewModel.UIToBoardCol(uiCol);
 
                 // Get piece using board coordinates
-                int piece = _gameController.GetPieceAt(boardRow, boardCol);
+                int piece = _gameViewModel.GetPieceAt(boardRow, boardCol);
                 Ellipse pieceUI = _pieces[uiRow, uiCol];
 
                 if (piece == 0)
@@ -499,9 +499,9 @@ public partial class MainWindow : Window
 
     private void UpdateGameStatus()
     {
-        if (_gameController.IsPlayerTurn)
+        if (_gameViewModel.IsPlayerTurn)
         {
-            if (_gameController.AvailableMoves.Count == 0)
+            if (_gameViewModel.AvailableMoves.Count == 0)
             {
                 _statusText.Text = "Game over! You lose.";
             }
@@ -512,7 +512,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            if (_gameController.AvailableMoves.Count == 0)
+            if (_gameViewModel.AvailableMoves.Count == 0)
             {
                 _statusText.Text = "Game over! You win!";
             }
@@ -526,7 +526,7 @@ public partial class MainWindow : Window
     // Handle clicks on pieces
     private void PieceClicked(object sender, PointerPressedEventArgs e)
     {
-        if (!_gameController.IsPlayerTurn)
+        if (!_gameViewModel.IsPlayerTurn)
             return;
 
         Ellipse clickedPiece = sender as Ellipse;
@@ -536,15 +536,15 @@ public partial class MainWindow : Window
         int clickedUICol = (int)clickedPiece.GetValue(Grid.ColumnProperty);
 
         // Immediately convert to board coordinates
-        int clickedBoardRow = _gameController.UIToBoardRow(clickedUIRow);
-        int clickedBoardCol = _gameController.UIToBoardCol(clickedUICol);
+        int clickedBoardRow = _gameViewModel.UIToBoardRow(clickedUIRow);
+        int clickedBoardCol = _gameViewModel.UIToBoardCol(clickedUICol);
 
         Console.WriteLine(
             $"Piece clicked at UI ({clickedUIRow},{clickedUICol}) = Board ({clickedBoardRow},{clickedBoardCol})"
         );
 
         // Get the piece at the clicked position using board coordinates
-        int piece = _gameController.GetPieceAt(clickedBoardRow, clickedBoardCol);
+        int piece = _gameViewModel.GetPieceAt(clickedBoardRow, clickedBoardCol);
         Console.WriteLine($"Piece value: {piece}");
 
         // Delegate to HandlePositionClick for common logic (using board coordinates)
@@ -561,7 +561,7 @@ public partial class MainWindow : Window
 
     private void SquareClicked(object sender, PointerPressedEventArgs e)
     {
-        if (!_gameController.IsPlayerTurn)
+        if (!_gameViewModel.IsPlayerTurn)
             return;
 
         Rectangle clickedSquare = sender as Rectangle;
@@ -571,15 +571,15 @@ public partial class MainWindow : Window
         int clickedUICol = (int)clickedSquare.GetValue(Grid.ColumnProperty);
 
         // Immediately convert to board coordinates
-        int clickedBoardRow = _gameController.UIToBoardRow(clickedUIRow);
-        int clickedBoardCol = _gameController.UIToBoardCol(clickedUICol);
+        int clickedBoardRow = _gameViewModel.UIToBoardRow(clickedUIRow);
+        int clickedBoardCol = _gameViewModel.UIToBoardCol(clickedUICol);
 
         Console.WriteLine(
             $"Square clicked at UI ({clickedUIRow},{clickedUICol}) = Board ({clickedBoardRow},{clickedBoardCol})"
         );
 
         // Get the piece at the clicked square using board coordinates
-        int piece = _gameController.GetPieceAt(clickedBoardRow, clickedBoardCol);
+        int piece = _gameViewModel.GetPieceAt(clickedBoardRow, clickedBoardCol);
         Console.WriteLine($"Piece value: {piece}");
 
         // Delegate to HandlePositionClick for common logic (using board coordinates)
@@ -610,7 +610,7 @@ public partial class MainWindow : Window
             int fromBoardCol = _selectedBoardCol;
 
             // Attempt to make a move
-            bool moveSuccessful = _gameController.TryMakeMove(
+            bool moveSuccessful = _gameViewModel.TryMakeMove(
                 fromBoardRow,
                 fromBoardCol,
                 clickedBoardRow,
@@ -640,7 +640,7 @@ public partial class MainWindow : Window
     private void SelectPiece(int boardRow, int boardCol, Rectangle square)
     {
         // Get moves for this piece
-        var pieceMoves = _gameController.GetMovesForPiece(boardRow, boardCol);
+        var pieceMoves = _gameViewModel.GetMovesForPiece(boardRow, boardCol);
 
         if (pieceMoves.Any())
         {
@@ -679,8 +679,8 @@ public partial class MainWindow : Window
                 // This is where you would draw the path line if desired
 
                 // For now, we'll just highlight the final destination
-                int uiRow = _gameController.BoardToUIRow(move.ToRow);
-                int uiCol = _gameController.BoardToUICol(move.ToCol);
+                int uiRow = _gameViewModel.BoardToUIRow(move.ToRow);
+                int uiCol = _gameViewModel.BoardToUICol(move.ToCol);
 
                 Rectangle targetSquare = _squares[uiRow, uiCol];
                 targetSquare.Stroke = new SolidColorBrush(Colors.LimeGreen);
@@ -690,8 +690,8 @@ public partial class MainWindow : Window
             else
             {
                 // For normal moves, just highlight the destination
-                int uiRow = _gameController.BoardToUIRow(move.ToRow);
-                int uiCol = _gameController.BoardToUICol(move.ToCol);
+                int uiRow = _gameViewModel.BoardToUIRow(move.ToRow);
+                int uiCol = _gameViewModel.BoardToUICol(move.ToCol);
 
                 Rectangle targetSquare = _squares[uiRow, uiCol];
                 targetSquare.Stroke = new SolidColorBrush(Colors.LimeGreen);
@@ -727,11 +727,11 @@ public partial class MainWindow : Window
 
     private async Task GetHint()
     {
-        if (_gameController.IsPlayerTurn)
+        if (_gameViewModel.IsPlayerTurn)
         {
             _hintButton.IsEnabled = false;
             _hintText.Text = "Getting hint from ChatGPT...";
-            await _gameController.GetHintFromChatGpt();
+            await _gameViewModel.GetHintFromChatGpt();
         }
         else
         {

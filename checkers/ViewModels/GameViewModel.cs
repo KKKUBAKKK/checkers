@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using checkers.Models;
 
-namespace checkers.controllers;
+namespace checkers.ViewModels;
 
-public class GameController
+public class GameViewModel
 {
     private Board _board;
     private Bot _bot;
@@ -26,26 +26,28 @@ public class GameController
     public event EventHandler<Board> BoardUpdated;
     public event EventHandler<string> HintReceived;
 
-    public GameController(string openAiApiKey)
+    public GameViewModel(string openAiApiKey)
     {
         _board = new Board();
         _bot = new Bot();
         _httpClient = new HttpClient();
         _openAiApiKey = openAiApiKey;
         IsPlayerTurn = true;
-        
+
         // Initialize the available moves
         _availableMoves = _board.GetMoves() ?? new List<Move>();
-        
+
         // Log initial state
         Console.WriteLine($"Initial board state: {_board}");
         Console.WriteLine($"Initial available moves: {_availableMoves.Count}");
         foreach (var move in _availableMoves)
         {
-            Console.WriteLine($"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}");
+            Console.WriteLine(
+                $"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
+            );
         }
     }
-    
+
     public TimeSpan BotThinkingTime
     {
         get => _bot.ThinkingTime;
@@ -74,17 +76,17 @@ public class GameController
     {
         return BoardSize - 1 - boardRow;
     }
-    
+
     // Convert board to GPT row
     public string BoardToGptRow(int boardRow)
     {
         return (boardRow + 1).ToString();
     }
-    
+
     // Convert board to GPT column
     public string BoardToGptCol(int boardCol)
     {
-        return ((char) ('A' + boardCol)).ToString();
+        return ((char)('A' + boardCol)).ToString();
     }
 
     // Convert board to UI column
@@ -98,7 +100,7 @@ public class GameController
     {
         if (!IsPlayerTurn)
             return -1 * _board.GetPieceAt(boardRow, boardCol);
-        
+
         return _board.GetPieceAt(boardRow, boardCol);
     }
 
@@ -106,19 +108,21 @@ public class GameController
     public List<Move> GetMovesForPiece(int boardRow, int boardCol)
     {
         Console.WriteLine($"Checking moves for piece at board position ({boardRow},{boardCol})");
-        
+
         // Find moves that start at this position
         var pieceMoves = _availableMoves
             .Where(m => m.FromRow == boardRow && m.FromCol == boardCol)
             .ToList();
-        
+
         // Debug log all moves
         Console.WriteLine($"Found {pieceMoves.Count} moves for this piece");
         foreach (var move in pieceMoves)
         {
-            Console.WriteLine($"Available move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}");
+            Console.WriteLine(
+                $"Available move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
+            );
         }
-        
+
         return pieceMoves;
     }
 
@@ -126,22 +130,29 @@ public class GameController
     {
         // Get all available moves - Board.GetMoves already returns only max captures if available
         _availableMoves = _board.GetMoves() ?? new List<Move>();
-        
+
         Console.WriteLine($"Updated available moves: {_availableMoves.Count}");
         foreach (var move in _availableMoves)
         {
-            Console.WriteLine($"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}");
+            Console.WriteLine(
+                $"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
+            );
         }
     }
 
     public bool TryMakeMove(int fromBoardRow, int fromBoardCol, int toBoardRow, int toBoardCol)
     {
-        Console.WriteLine($"TryMakeMove: From board ({fromBoardRow},{fromBoardCol}) to ({toBoardRow},{toBoardCol})");
+        Console.WriteLine(
+            $"TryMakeMove: From board ({fromBoardRow},{fromBoardCol}) to ({toBoardRow},{toBoardCol})"
+        );
 
         // Find the matching move in available moves
-        var selectedMove = _availableMoves.FirstOrDefault(
-            m => m.FromRow == fromBoardRow && m.FromCol == fromBoardCol && 
-                 m.ToRow == toBoardRow && m.ToCol == toBoardCol);
+        var selectedMove = _availableMoves.FirstOrDefault(m =>
+            m.FromRow == fromBoardRow
+            && m.FromCol == fromBoardCol
+            && m.ToRow == toBoardRow
+            && m.ToCol == toBoardCol
+        );
 
         if (selectedMove == null)
         {
@@ -149,7 +160,9 @@ public class GameController
             return false;
         }
 
-        Console.WriteLine($"Selected move: From ({selectedMove.FromRow},{selectedMove.FromCol}) to ({selectedMove.ToRow},{selectedMove.ToCol}) - Capture: {selectedMove.IsCapture}");
+        Console.WriteLine(
+            $"Selected move: From ({selectedMove.FromRow},{selectedMove.FromCol}) to ({selectedMove.ToRow},{selectedMove.ToCol}) - Capture: {selectedMove.IsCapture}"
+        );
         Console.WriteLine(_board);
 
         // Execute the move - this also changes whose turn it is
@@ -158,22 +171,23 @@ public class GameController
 
         // Toggle IsPlayerTurn since the board has switched turns
         IsPlayerTurn = !IsPlayerTurn;
-        
+
         // Update available moves for the next player
         UpdateAvailableMoves();
-        
+
         // Notify that the board has been updated
         BoardUpdated?.Invoke(this, _board);
-        
+
         // If it's bot's turn, make a move after a short delay
         if (!IsPlayerTurn)
         {
-            Task.Run(async () => {
+            Task.Run(async () =>
+            {
                 await Task.Delay(500); // Small delay for better UX
                 MakeBotMove();
             });
         }
-        
+
         return true;
     }
 
@@ -187,20 +201,22 @@ public class GameController
 
         // Using the GetBestMove method that only takes board as input
         var botMove = _bot.GetBestMove(_board);
-        
+
         if (botMove != null)
         {
-            Console.WriteLine($"Bot move: From ({botMove.FromRow},{botMove.FromCol}) to ({botMove.ToRow},{botMove.ToCol}) - Capture: {botMove.IsCapture}");
-            
+            Console.WriteLine(
+                $"Bot move: From ({botMove.FromRow},{botMove.FromCol}) to ({botMove.ToRow},{botMove.ToCol}) - Capture: {botMove.IsCapture}"
+            );
+
             // Execute the move - this also changes whose turn it is
             _board = botMove.Execute(_board);
-            
+
             // Toggle IsPlayerTurn since the board has switched turns
             IsPlayerTurn = !IsPlayerTurn;
-            
+
             // Update available moves for the player
             UpdateAvailableMoves();
-            
+
             // Notify that the board has been updated
             BoardUpdated?.Invoke(this, _board);
         }
@@ -216,17 +232,21 @@ public class GameController
         {
             // Convert current board state to a string representation
             string boardState = _board.ToString();
-            
+
             // Create move descriptions for available moves
-            var moveDescriptions = _availableMoves.Select(m => {
-                string desc = $"From ({BoardToGptRow(m.FromRow)},{BoardToGptCol(m.FromCol)}) to ({BoardToGptRow(m.ToRow)},{BoardToGptCol(m.ToCol)})";
-                if (m.IsCapture)
+            var moveDescriptions = _availableMoves
+                .Select(m =>
                 {
-                    desc += " - CAPTURE";
-                }
-                return desc;
-            }).ToList();
-            
+                    string desc =
+                        $"From ({BoardToGptRow(m.FromRow)},{BoardToGptCol(m.FromCol)}) to ({BoardToGptRow(m.ToRow)},{BoardToGptCol(m.ToCol)})";
+                    if (m.IsCapture)
+                    {
+                        desc += " - CAPTURE";
+                    }
+                    return desc;
+                })
+                .ToList();
+
             string availableMovesText = string.Join("\n", moveDescriptions);
 
             // Prepare the request to OpenAI
@@ -235,24 +255,32 @@ public class GameController
                 model = "gpt-4",
                 messages = new[]
                 {
-                    new { role = "system", content = "You are a checkers expert assistant. Provide concise, actionable hints. Board coordinates are (row,column) starting from bottom-left corner (0,0) where white pieces begin. Limit your response to 2-3 sentences." },
-                    new { role = "user", content = $"I'm playing as white and need a hint for my next move. Current board:\n\n{boardState}\n\nAvailable moves:\n{availableMovesText}\n\nWhat's my best move? If suggesting a specific move, use UI coordinates shown in the available moves list." }
+                    new
+                    {
+                        role = "system",
+                        content = "You are a checkers expert assistant. Provide concise, actionable hints. Board coordinates are (row,column) starting from bottom-left corner (0,0) where white pieces begin. Limit your response to 2-3 sentences.",
+                    },
+                    new
+                    {
+                        role = "user",
+                        content = $"I'm playing as white and need a hint for my next move. Current board:\n\n{boardState}\n\nAvailable moves:\n{availableMovesText}\n\nWhat's my best move? If suggesting a specific move, use UI coordinates shown in the available moves list.",
+                    },
                 },
-                max_tokens = 150
+                max_tokens = 150,
             };
 
             var requestJson = JsonSerializer.Serialize(request);
             var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-            
+
             // Add API key to headers
             _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_openAiApiKey}");
 
             var response = await _httpClient.PostAsync(OpenAiApiUrl, content);
             var responseJson = await response.Content.ReadAsStringAsync();
-            
+
             Console.WriteLine($"API Response: {responseJson}");
-            
+
             // Parse the response
             using JsonDocument doc = JsonDocument.Parse(responseJson);
             var choices = doc.RootElement.GetProperty("choices");
@@ -274,9 +302,8 @@ public class GameController
     {
         _board = new Board();
         IsPlayerTurn = true;
-        
+
         UpdateAvailableMoves();
         BoardUpdated?.Invoke(this, _board);
     }
 }
-    
