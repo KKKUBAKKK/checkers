@@ -9,6 +9,9 @@ using checkers.Models;
 
 namespace checkers.ViewModels;
 
+/// <summary>
+/// ViewModel for managing the checkers game state, logic, and interactions
+/// </summary>
 public class GameViewModel
 {
     private Board _board;
@@ -19,13 +22,34 @@ public class GameViewModel
     private readonly string _openAiApiKey;
     private const int BoardSize = 8;
 
+    /// <summary>
+    /// Current game board instance
+    /// </summary>
     public Board Board => _board;
+
+    /// <summary>
+    /// Indicates whether it's currently the player's turn
+    /// </summary>
     public bool IsPlayerTurn { get; private set; }
+
+    /// <summary>
+    /// List of currently available legal moves
+    /// </summary>
     public List<Move> AvailableMoves => _availableMoves;
 
+    /// <summary>
+    /// Event triggered when the board state is updated
+    /// </summary>
     public event EventHandler<Board> BoardUpdated;
+
+    /// <summary>
+    /// Event triggered when a hint is received from ChatGPT
+    /// </summary>
     public event EventHandler<string> HintReceived;
 
+    /// <summary>
+    /// Initializes a new game with the specified OpenAI API key
+    /// </summary>
     public GameViewModel(string openAiApiKey)
     {
         _board = new Board();
@@ -34,10 +58,8 @@ public class GameViewModel
         _openAiApiKey = openAiApiKey;
         IsPlayerTurn = true;
 
-        // Initialize the available moves
         _availableMoves = _board.GetMoves() ?? new List<Move>();
 
-        // Log initial state
         Console.WriteLine($"Initial board state: {_board}");
         Console.WriteLine($"Initial available moves: {_availableMoves.Count}");
         foreach (var move in _availableMoves)
@@ -48,54 +70,70 @@ public class GameViewModel
         }
     }
 
+    /// <summary>
+    /// Gets or sets the AI opponent's thinking time
+    /// </summary>
     public TimeSpan BotThinkingTime
     {
         get => _bot.ThinkingTime;
         set
         {
-            // Create a new bot with updated thinking time
             _bot = new Bot(_bot.IsWhite, value);
             Console.WriteLine($"Bot thinking time set to {value.TotalSeconds} seconds");
         }
     }
 
-    // Convert UI to board row coordinates
+    /// <summary>
+    /// Converts UI row coordinate to board row coordinate
+    /// </summary>
     public int UIToBoardRow(int uiRow)
     {
         return BoardSize - 1 - uiRow;
     }
 
-    // Convert UI to board column
+    /// <summary>
+    /// Converts UI column coordinate to board column coordinate
+    /// </summary>
     public int UIToBoardCol(int uiCol)
     {
         return uiCol;
     }
 
-    // Convert board to UI row
+    /// <summary>
+    /// Converts board row coordinate to UI row coordinate
+    /// </summary>
     public int BoardToUIRow(int boardRow)
     {
         return BoardSize - 1 - boardRow;
     }
 
-    // Convert board to GPT row
+    /// <summary>
+    /// Converts board row coordinate to GPT notation
+    /// </summary>
     public string BoardToGptRow(int boardRow)
     {
         return (boardRow + 1).ToString();
     }
 
-    // Convert board to GPT column
+    /// <summary>
+    /// Converts board column coordinate to GPT notation
+    /// </summary>
     public string BoardToGptCol(int boardCol)
     {
         return ((char)('A' + boardCol)).ToString();
     }
 
-    // Convert board to UI column
+    /// <summary>
+    /// Converts board column coordinate to UI column coordinate
+    /// </summary>
     public int BoardToUICol(int boardCol)
     {
         return boardCol;
     }
 
-    // Get the piece at board coordinates
+    /// <summary>
+    /// Gets the piece value at the specified board coordinates
+    /// </summary>
     public int GetPieceAt(int boardRow, int boardCol)
     {
         if (!IsPlayerTurn)
@@ -104,49 +142,32 @@ public class GameViewModel
         return _board.GetPieceAt(boardRow, boardCol);
     }
 
-    // Get available moves for a piece at the given board coordinates
+    /// <summary>
+    /// Returns available moves for a piece at the specified board coordinates
+    /// </summary>
     public List<Move> GetMovesForPiece(int boardRow, int boardCol)
     {
-        Console.WriteLine($"Checking moves for piece at board position ({boardRow},{boardCol})");
-
-        // Find moves that start at this position
         var pieceMoves = _availableMoves
             .Where(m => m.FromRow == boardRow && m.FromCol == boardCol)
             .ToList();
 
-        // Debug log all moves
-        Console.WriteLine($"Found {pieceMoves.Count} moves for this piece");
-        foreach (var move in pieceMoves)
-        {
-            Console.WriteLine(
-                $"Available move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
-            );
-        }
-
         return pieceMoves;
     }
 
+    /// <summary>
+    /// Updates the list of available legal moves for the current turn
+    /// </summary>
     private void UpdateAvailableMoves()
     {
         // Get all available moves - Board.GetMoves already returns only max captures if available
         _availableMoves = _board.GetMoves() ?? new List<Move>();
-
-        Console.WriteLine($"Updated available moves: {_availableMoves.Count}");
-        foreach (var move in _availableMoves)
-        {
-            Console.WriteLine(
-                $"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
-            );
-        }
     }
 
+    /// <summary>
+    /// Attempts to make a move from the specified coordinates
+    /// </summary>
     public bool TryMakeMove(int fromBoardRow, int fromBoardCol, int toBoardRow, int toBoardCol)
     {
-        Console.WriteLine(
-            $"TryMakeMove: From board ({fromBoardRow},{fromBoardCol}) to ({toBoardRow},{toBoardCol})"
-        );
-
-        // Find the matching move in available moves
         var selectedMove = _availableMoves.FirstOrDefault(m =>
             m.FromRow == fromBoardRow
             && m.FromCol == fromBoardCol
@@ -156,34 +177,22 @@ public class GameViewModel
 
         if (selectedMove == null)
         {
-            Console.WriteLine("No matching move found in available moves");
             return false;
         }
 
-        Console.WriteLine(
-            $"Selected move: From ({selectedMove.FromRow},{selectedMove.FromCol}) to ({selectedMove.ToRow},{selectedMove.ToCol}) - Capture: {selectedMove.IsCapture}"
-        );
-        Console.WriteLine(_board);
-
-        // Execute the move - this also changes whose turn it is
         _board = selectedMove.Execute(_board);
-        Console.WriteLine(_board);
 
-        // Toggle IsPlayerTurn since the board has switched turns
         IsPlayerTurn = !IsPlayerTurn;
 
-        // Update available moves for the next player
         UpdateAvailableMoves();
 
-        // Notify that the board has been updated
         BoardUpdated?.Invoke(this, _board);
 
-        // If it's bot's turn, make a move after a short delay
         if (!IsPlayerTurn)
         {
             Task.Run(async () =>
             {
-                await Task.Delay(500); // Small delay for better UX
+                await Task.Delay(500);
                 MakeBotMove();
             });
         }
@@ -191,49 +200,39 @@ public class GameViewModel
         return true;
     }
 
+    /// <summary>
+    /// Executes the AI opponent's move
+    /// </summary>
     private void MakeBotMove()
     {
         if (_availableMoves.Count == 0)
         {
-            Console.WriteLine("Bot has no available moves");
             return;
         }
 
-        // Using the GetBestMove method that only takes board as input
         var botMove = _bot.GetBestMove(_board);
 
         if (botMove != null)
         {
-            Console.WriteLine(
-                $"Bot move: From ({botMove.FromRow},{botMove.FromCol}) to ({botMove.ToRow},{botMove.ToCol}) - Capture: {botMove.IsCapture}"
-            );
-
-            // Execute the move - this also changes whose turn it is
             _board = botMove.Execute(_board);
 
-            // Toggle IsPlayerTurn since the board has switched turns
             IsPlayerTurn = !IsPlayerTurn;
 
-            // Update available moves for the player
             UpdateAvailableMoves();
 
-            // Notify that the board has been updated
             BoardUpdated?.Invoke(this, _board);
-        }
-        else
-        {
-            Console.WriteLine("Bot GetBestMove returned null");
         }
     }
 
+    /// <summary>
+    /// Requests and retrieves a strategic hint from ChatGPT
+    /// </summary>
     public async Task<string> GetHintFromChatGpt()
     {
         try
         {
-            // Convert current board state to a string representation
             string boardState = _board.ToString();
 
-            // Create move descriptions for available moves
             var moveDescriptions = _availableMoves
                 .Select(m =>
                 {
@@ -249,7 +248,6 @@ public class GameViewModel
 
             string availableMovesText = string.Join("\n", moveDescriptions);
 
-            // Prepare the request to OpenAI
             var request = new
             {
                 model = "gpt-4",
@@ -258,7 +256,7 @@ public class GameViewModel
                     new
                     {
                         role = "system",
-                        content = "You are a checkers expert assistant. Provide concise, actionable hints. Board coordinates are (row,column) starting from bottom-left corner (0,0) where white pieces begin. Limit your response to 2-3 sentences.",
+                        content = "You are an english draughts expert assistant. Provide concise, actionable hints. Board coordinates are (row,column) starting from bottom-left corner (1,A) where white pieces begin. In the board representation, small w or b are regular pieces, and W or B are kings, which can move just like regular ones, but both forwards and backwards. Limit your response to 2-3 sentences.",
                     },
                     new
                     {
@@ -272,7 +270,6 @@ public class GameViewModel
             var requestJson = JsonSerializer.Serialize(request);
             var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
-            // Add API key to headers
             _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_openAiApiKey}");
 
@@ -281,7 +278,6 @@ public class GameViewModel
 
             Console.WriteLine($"API Response: {responseJson}");
 
-            // Parse the response
             using JsonDocument doc = JsonDocument.Parse(responseJson);
             var choices = doc.RootElement.GetProperty("choices");
             var message = choices[0].GetProperty("message");
@@ -298,6 +294,9 @@ public class GameViewModel
         }
     }
 
+    /// <summary>
+    /// Resets the game to its initial state
+    /// </summary>
     public void Reset()
     {
         _board = new Board();

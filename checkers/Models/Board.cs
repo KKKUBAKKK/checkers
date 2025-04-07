@@ -6,53 +6,151 @@ using System.Text;
 
 namespace checkers.Models;
 
+/// <summary>
+/// Represents a checkers game board using bitboard representation for efficient move generation and state management
+/// </summary>
 public class Board
 {
+    /// <summary>
+    /// Bitmask for initial positions of white pieces
+    /// </summary>
     private const UInt64 InitialWhite = 0x000000000055AA55;
+
+    /// <summary>
+    /// Bitmask for initial positions of black pieces
+    /// </summary>
     private const UInt64 InitialBlack = 0xAA55AA0000000000;
+
+    /// <summary>
+    /// Bitmask for initial positions of kings
+    /// </summary>
     private const UInt64 InitialKings = 0x0000000000000000;
 
+    /// <summary>
+    /// Bitmask for the first row
+    /// </summary>
     private const UInt64 FirstRow = 0x00000000000000FF;
+
+    /// <summary>
+    /// Bitmask for the second row
+    /// </summary>
     private const UInt64 SecondRow = 0x000000000000FF00;
+
+    /// <summary>
+    /// Bitmask for the second last row
+    /// </summary>
     private const UInt64 SecondLastRow = 0x00FF000000000000;
+
+    /// <summary>
+    /// Bitmask for the last row
+    /// </summary>
     private const UInt64 LastRow = 0xFF00000000000000;
 
+    /// <summary>
+    /// Bitmask for the first column
+    /// </summary>
     private const UInt64 FirstCol = 0x0101010101010101;
+
+    /// <summary>
+    /// Bitmask for the second column
+    /// </summary>
     private const UInt64 SecondCol = 0x0202020202020202;
+
+    /// <summary>
+    /// Bitmask for the second last column
+    /// </summary>
     private const UInt64 SecondLastCol = 0x4040404040404040;
+
+    /// <summary>
+    /// Bitmask for the last column
+    /// </summary>
     private const UInt64 LastCol = 0x8080808080808080;
 
+    /// <summary>
+    /// Board size constant
+    /// </summary>
     private const int BoardSize = 64;
+
+    /// <summary>
+    /// Board width constant
+    /// </summary>
     private const int BoardWidth = 8;
 
+    /// <summary>
+    /// Bitshift values for left up diagonal move
+    /// </summary>
     private const int UpLeft = 7;
+
+    /// <summary>
+    /// Bitshift values for right up diagonal move
+    /// </summary>
     private const int UpRight = 9;
+
+    /// <summary>
+    /// Bitshift values for left down diagonal move
+    /// </summary>
     private const int DownLeft = 9;
+
+    /// <summary>
+    /// Bitshift values for right down diagonal move
+    /// </summary>
     private const int DownRight = 7;
 
+    /// <summary>
+    /// Variable to track the current player's turn
+    /// </summary>
     private bool _isWhiteTurn;
 
+    /// <summary>
+    /// Bitboard representation of white pieces
+    /// </summary>
     private UInt64 _white;
+
+    /// <summary>
+    /// Bitboard representation of black pieces
+    /// </summary>
     private UInt64 _black;
+
+    /// <summary>
+    /// Bitboard representation of kings
+    /// </summary>
     private UInt64 _kings;
 
+    /// <summary>
+    /// Property to check if it's white's turn
+    /// </summary>
     public bool IsWhiteTurn => _isWhiteTurn;
+
+    /// <summary>
+    /// Getters and setters for the bitboard representations of white pieces
+    /// </summary>
     public UInt64 White
     {
         get => _white;
         set => _white = value;
     }
+
+    /// <summary>
+    /// Getters and setters for the bitboard representations of black pieces
+    /// </summary>
     public UInt64 Black
     {
         get => _black;
         set => _black = value;
     }
+
+    /// <summary>
+    /// Getters and setters for the bitboard representations of kings
+    /// </summary>
     public UInt64 Kings
     {
         get => _kings;
         set => _kings = value;
     }
 
+    /// <summary>
+    /// Constructor to initialize the board with default values
+    /// </summary>
     public Board()
     {
         _isWhiteTurn = true;
@@ -61,37 +159,58 @@ public class Board
         _kings = InitialKings;
     }
 
+    /// <summary>
+    /// Convert a position to a bitmask
+    /// </summary>
     public static UInt64 GetPositionMask(Position pos)
     {
         return 1UL << pos.Row * BoardWidth + pos.Col;
     }
 
+    /// <summary>
+    /// Converts a bitboard mask to its corresponding board position
+    /// </summary>
     public static Position GetPositionFromMask(UInt64 mask)
     {
         int index = BitOperations.TrailingZeroCount(mask);
         return new Position(index / BoardWidth, index % BoardWidth);
     }
 
+    /// <summary>
+    /// Checks if a position is empty
+    /// </summary>
     public bool IsEmpty(Position pos)
     {
         return (_white | _black & GetPositionMask(pos)) == 0UL;
     }
 
+    /// <summary>
+    /// Checks if a position contains a white piece
+    /// </summary>
     public bool IsWhite(Position pos)
     {
         return (_white & GetPositionMask(pos)) != 0UL;
     }
 
+    /// <summary>
+    /// Checks if a position contains a black piece
+    /// </summary>
     public bool IsBlack(Position pos)
     {
         return (_black & GetPositionMask(pos)) != 0UL;
     }
 
+    /// <summary>
+    /// Checks if a position contains a king
+    /// </summary
     public bool IsKing(Position pos)
     {
         return (_kings & GetPositionMask(pos)) != 0UL;
     }
 
+    /// <summary>
+    /// Removes a piece from the specified position
+    /// </summary>
     public void ClearPiece(Position pos)
     {
         UInt64 piece = GetPositionMask(pos);
@@ -100,6 +219,9 @@ public class Board
         _kings &= ~piece;
     }
 
+    /// <summary>
+    /// Places a piece at the specified position
+    /// </summary>
     public void SetPiece(Position pos, bool isWhite = false)
     {
         UInt64 piece = GetPositionMask(pos);
@@ -113,6 +235,9 @@ public class Board
             _kings |= piece;
     }
 
+    /// <summary>
+    /// Creates a deep copy of the current board state
+    /// </summary>
     public Board Copy()
     {
         var board = new Board();
@@ -123,6 +248,9 @@ public class Board
         return board;
     }
 
+    /// <summary>
+    /// Generates all legal moves for the current position
+    /// </summary>
     public List<Move> GetMoves()
     {
         List<Move> moves = new List<Move>();
@@ -214,7 +342,6 @@ public class Board
         if (moves.Any())
             return moves;
 
-        // Find regular moves
         for (int i = 0; i < BoardSize; i++)
         {
             UInt64 start = 1UL << i;
@@ -260,6 +387,9 @@ public class Board
         return moves;
     }
 
+    /// <summary>
+    /// Executes a move on the board
+    /// </summary>
     public void ApplyMove(Move move)
     {
         if (_isWhiteTurn)
@@ -286,6 +416,9 @@ public class Board
         _isWhiteTurn = !_isWhiteTurn;
     }
 
+    /// <summary>
+    /// Checks if the game is over
+    /// </summary>
     public bool IfOver()
     {
         if (_white == 0UL || _black == 0UL)
@@ -296,6 +429,9 @@ public class Board
         return false;
     }
 
+    /// <summary>
+    /// Evaluates the current board position with multiple strategic factors
+    /// </summary>
     public int Evaluate()
     {
         UInt64 player = _isWhiteTurn ? _white : _black;
@@ -305,15 +441,13 @@ public class Board
         UInt64 playerRegular = player & ~_kings;
         UInt64 opponentRegular = opponent & ~_kings;
 
-        // Game termination conditions
         if (player == 0UL || GetMoves().Count == 0)
-            return -1000; // Loss is worse than any position
+            return -1000;
         if (opponent == 0UL)
-            return 1000; // Win is better than any position
+            return 1000;
 
         int score = 0;
 
-        // Material count (kings worth 3x regular pieces)
         int playerRegularCount = BitOperations.PopCount(playerRegular);
         int opponentRegularCount = BitOperations.PopCount(opponentRegular);
         int playerKingCount = BitOperations.PopCount(playerKings);
@@ -324,7 +458,6 @@ public class Board
         score += playerKingCount * 300;
         score -= opponentKingCount * 300;
 
-        // Advancement for regular pieces
         for (int i = 0; i < BoardSize; i++)
         {
             UInt64 pos = 1UL << i;
@@ -332,22 +465,20 @@ public class Board
 
             if ((playerRegular & pos) != 0)
             {
-                // Advancement bonus (increasing as pieces get closer to promotion)
-                if (_isWhiteTurn) // White pieces move upward
+                if (_isWhiteTurn)
                     score += row * 5;
-                else // Black pieces move downward
+                else
                     score += (7 - row) * 5;
 
-                // Extra bonus for pieces close to promotion
                 if ((_isWhiteTurn && row >= 5) || (!_isWhiteTurn && row <= 2))
                     score += 15;
             }
 
             if ((opponentRegular & pos) != 0)
             {
-                if (_isWhiteTurn) // Black pieces move downward
+                if (_isWhiteTurn)
                     score -= (7 - row) * 5;
-                else // White pieces move upward
+                else
                     score -= row * 5;
 
                 if ((_isWhiteTurn && row <= 2) || (!_isWhiteTurn && row >= 5))
@@ -355,25 +486,20 @@ public class Board
             }
         }
 
-        // Center control (middle squares are strategically valuable)
-        UInt64 centerMask = 0x00003C3C3C3C0000UL; // Middle 4x4 area
+        UInt64 centerMask = 0x00003C3C3C3C0000UL;
         score += BitOperations.PopCount(player & centerMask) * 10;
         score -= BitOperations.PopCount(opponent & centerMask) * 10;
 
-        // Edge penalty (pieces on edges have limited mobility)
         UInt64 edgeMask = FirstCol | LastCol;
         score -= BitOperations.PopCount(player & edgeMask) * 5;
         score += BitOperations.PopCount(opponent & edgeMask) * 5;
 
-        // Mobility (number of available moves)
         int moveCount = GetMoves().Count;
         score += moveCount * 5;
 
-        // Back row defense bonus
         UInt64 playerBackRowMask = _isWhiteTurn ? FirstRow : LastRow;
         score += BitOperations.PopCount(playerRegular & playerBackRowMask) * 10;
 
-        // Material advantage factor (encourage trades when ahead, avoid when behind)
         int materialDifference =
             playerRegularCount + 3 * playerKingCount - opponentRegularCount - 3 * opponentKingCount;
 
@@ -382,6 +508,9 @@ public class Board
         return score;
     }
 
+    /// <summary>
+    /// Promotes a piece to king at the specified position
+    /// </summary>
     public void ToKing(Position pos)
     {
         var piece = GetPositionMask(pos);
@@ -389,6 +518,10 @@ public class Board
         _kings |= piece;
     }
 
+    /// <summary>
+    /// Gets the piece type at the specified board coordinates
+    /// Returns: 2 (white king), 1 (white), -2 (black king), -1 (black), 0 (empty)
+    /// </summary>
     public int GetPieceAt(int row, int col)
     {
         UInt64 mask = GetPositionMask(new Position(row, col));
@@ -407,9 +540,11 @@ public class Board
         return 0;
     }
 
+    /// <summary>
+    /// Returns a string representation of the current board state
+    /// </summary>
     public override string ToString()
     {
-        // Create board representation
         char[] board = new char[BoardSize];
         for (int i = 0; i < BoardSize; i++)
         {
@@ -422,16 +557,12 @@ public class Board
                 board[i] = '.';
         }
 
-        // Build formatted output
         StringBuilder sb = new StringBuilder();
 
-        // Process rows in reverse (from 7 to 0)
         for (int row = BoardWidth - 1; row >= 0; row--)
         {
-            // Add row number label (8 to 1)
             sb.Append($"{row + 1} ");
 
-            // Add pieces for this row with spaces between them
             for (int col = 0; col < BoardWidth; col++)
             {
                 sb.Append(board[row * BoardWidth + col]);
@@ -441,7 +572,6 @@ public class Board
             sb.AppendLine();
         }
 
-        // Add column labels at the bottom
         sb.Append("  A B C D E F G H");
 
         return sb.ToString();

@@ -6,68 +6,99 @@ using System.Threading.Tasks;
 
 namespace checkers.Models;
 
+/// <summary>
+/// Represents an AI opponent using alpha-beta pruning algorithm for move selection
+/// </summary>
 public class Bot
 {
+    /// <summary>
+    /// Indicates whether the bot plays as white pieces
+    /// </summary>
     private readonly bool _isWhite;
+
+    /// <summary>
+    /// Maximum time allowed for move calculation
+    /// </summary>
     private readonly TimeSpan _moveTime;
+
+    /// <summary>
+    ///
+    /// </summary>
     private const int InitialDepth = 1;
+
+    /// <summary>
+    /// Maximum search depth for the alpha-beta algorithm
+    /// </summary>
     private const int MaxSearchDepth = 20;
-    
+
+    /// <summary>
+    /// Indicates whether the bot plays as white pieces
+    /// </summary>
     public bool IsWhite => _isWhite;
+
+    /// <summary>
+    /// Maximum time allowed for move calculation
+    /// </summary>
     public TimeSpan ThinkingTime => _moveTime;
 
+    /// <summary>
+    /// Initializes a new bot instance with specified color and thinking time
+    /// </summary>
     public Bot(bool isWhite = false, TimeSpan moveTime = default)
     {
         _isWhite = isWhite;
         _moveTime = moveTime == default ? TimeSpan.FromSeconds(5) : moveTime;
     }
 
+    /// <summary>
+    /// Calculates and returns the best possible move using iterative deepening search
+    /// </summary>
     public Move? GetBestMove(Board board)
     {
         var moves = board.GetMoves();
         if (moves.Count == 0)
             return null;
-            
-        // Quick return for single moves
+
         if (moves.Count == 1)
             return moves[0];
 
-        // Use iterative deepening with time limit
         var stopwatch = Stopwatch.StartNew();
         var bestMoveResult = new ConcurrentDictionary<int, Move>();
-        var bestScoreResult = new ConcurrentDictionary<int, int>();
         var tokenSource = new CancellationTokenSource();
 
         try
         {
-            // Set timer to cancel computation when move time is up
             tokenSource.CancelAfter(_moveTime);
             var token = tokenSource.Token;
 
-            // Iterative deepening - keep searching deeper until time expires
             for (int depth = InitialDepth; depth <= MaxSearchDepth; depth++)
             {
-                int searchDepth = depth; // Local copy for lambda expression
+                int searchDepth = depth;
                 Move currentBestMove = null;
                 int currentBestScore = int.MinValue;
 
                 try
                 {
-                    // Search in parallel
-                    Parallel.ForEach(moves,
+                    Parallel.ForEach(
+                        moves,
                         new ParallelOptions { CancellationToken = token },
-                        () => (int.MinValue, null as Move), // Thread local state
-                        (move, state, localState) => {
-                            // Check for cancellation
+                        () => (int.MinValue, null as Move),
+                        (move, state, localState) =>
+                        {
                             token.ThrowIfCancellationRequested();
 
                             var (localBestScore, localBestMove) = localState;
                             var newBoard = board.Copy();
                             newBoard.ApplyMove(move);
 
-                            // Bot is always the minimizing player if it's black (not white)
-                            var score = AlphaBeta(newBoard, searchDepth - 1, int.MinValue, int.MaxValue, 
-                                                 !board.IsWhiteTurn, token);
+                            var score = AlphaBeta(
+                                newBoard,
+                                searchDepth - 1,
+                                int.MinValue,
+                                int.MaxValue,
+                                !board.IsWhiteTurn,
+                                token
+                            );
 
                             if (score > localBestScore)
                             {
@@ -77,8 +108,8 @@ public class Bot
 
                             return (localBestScore, localBestMove);
                         },
-                        localState => {
-                            // Combine results from all threads
+                        localState =>
+                        {
                             var (score, move) = localState;
                             if (move != null && score > currentBestScore)
                             {
@@ -91,18 +122,16 @@ public class Bot
                                     }
                                 }
                             }
-                        });
+                        }
+                    );
 
-                    // Save best move and score for this depth
                     if (currentBestMove != null)
                     {
                         bestMoveResult[depth] = currentBestMove;
-                        bestScoreResult[depth] = currentBestScore;
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    // Time's up, exit the loop
                     break;
                 }
             }
@@ -113,7 +142,6 @@ public class Bot
             tokenSource.Dispose();
         }
 
-        // Return the best move from the deepest completed search
         int deepestCompleted = 0;
         foreach (var depth in bestMoveResult.Keys)
         {
@@ -123,22 +151,29 @@ public class Bot
         return deepestCompleted > 0 ? bestMoveResult[deepestCompleted] : moves[0];
     }
 
-    private int AlphaBeta(Board board, int depth, int alpha, int beta, bool isMaximizing, CancellationToken token)
+    /// <summary>
+    /// Implements the alpha-beta pruning algorithm for move evaluation
+    /// </summary>
+    private int AlphaBeta(
+        Board board,
+        int depth,
+        int alpha,
+        int beta,
+        bool isMaximizing,
+        CancellationToken token
+    )
     {
-        // Check if we should stop searching due to time limit
         token.ThrowIfCancellationRequested();
 
         if (depth == 0 || board.IfOver())
         {
-            // Evaluate from the bot's perspective
             int score = board.Evaluate();
-            return _isWhite ? score : -score; // Invert score if bot is black
+            return _isWhite ? score : -score;
         }
 
         var moves = board.GetMoves();
         if (moves.Count == 0)
         {
-            // Game is over
             return isMaximizing ? int.MinValue : int.MaxValue;
         }
 
