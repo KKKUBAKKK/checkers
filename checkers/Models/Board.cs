@@ -261,28 +261,91 @@ public class Board
     }
 
     public int Evaluate()
+{
+    UInt64 player = _isWhiteTurn ? _white : _black;
+    UInt64 opponent = _isWhiteTurn ? _black : _white;
+    UInt64 playerKings = player & _kings;
+    UInt64 opponentKings = opponent & _kings;
+    UInt64 playerRegular = player & ~_kings;
+    UInt64 opponentRegular = opponent & ~_kings;
+    
+    // Game termination conditions
+    if (player == 0UL || GetMoves().Count == 0)
+        return -1000; // Loss is worse than any position
+    if (opponent == 0UL)
+        return 1000;  // Win is better than any position
+    
+    int score = 0;
+    
+    // Material count (kings worth 3x regular pieces)
+    int playerRegularCount = BitOperations.PopCount(playerRegular);
+    int opponentRegularCount = BitOperations.PopCount(opponentRegular);
+    int playerKingCount = BitOperations.PopCount(playerKings);
+    int opponentKingCount = BitOperations.PopCount(opponentKings);
+    
+    score += playerRegularCount * 100;
+    score -= opponentRegularCount * 100;
+    score += playerKingCount * 300;
+    score -= opponentKingCount * 300;
+    
+    // Advancement for regular pieces
+    for (int i = 0; i < BoardSize; i++)
     {
-        UInt64 player = _isWhiteTurn ? _white : _black;
-        UInt64 opponent = _isWhiteTurn ? _black : _white;
-
-        int score = 0;
+        UInt64 pos = 1UL << i;
+        int row = i / BoardWidth;
         
-        // Check for win
-        if (player == 0UL || GetMoves().Count == 0)
-            score -= 100;
-        if (opponent == 0UL)
-            score += 100;
+        if ((playerRegular & pos) != 0)
+        {
+            // Advancement bonus (increasing as pieces get closer to promotion)
+            if (_isWhiteTurn) // White pieces move upward
+                score += row * 5;
+            else // Black pieces move downward
+                score += (7 - row) * 5;
+                
+            // Extra bonus for pieces close to promotion
+            if ((_isWhiteTurn && row >= 5) || (!_isWhiteTurn && row <= 2))
+                score += 15;
+        }
         
-        // Check for kings
-        score += BitOperations.PopCount(_kings & player) * 5;
-        score -= BitOperations.PopCount(_kings & opponent) * 5;
-        
-        // Check for pieces
-        score += BitOperations.PopCount(player) * 1;
-        score -= BitOperations.PopCount(opponent) * 1;
-
-        return score;
+        if ((opponentRegular & pos) != 0)
+        {
+            if (_isWhiteTurn) // Black pieces move downward
+                score -= (7 - row) * 5;
+            else // White pieces move upward
+                score -= row * 5;
+                
+            if ((_isWhiteTurn && row <= 2) || (!_isWhiteTurn && row >= 5))
+                score -= 15;
+        }
     }
+    
+    // Center control (middle squares are strategically valuable)
+    UInt64 centerMask = 0x00003C3C3C3C0000UL; // Middle 4x4 area
+    score += BitOperations.PopCount(player & centerMask) * 10;
+    score -= BitOperations.PopCount(opponent & centerMask) * 10;
+    
+    // Edge penalty (pieces on edges have limited mobility)
+    UInt64 edgeMask = FirstCol | LastCol;
+    score -= BitOperations.PopCount(player & edgeMask) * 5;
+    score += BitOperations.PopCount(opponent & edgeMask) * 5;
+    
+    // Mobility (number of available moves)
+    int moveCount = GetMoves().Count;
+    score += moveCount * 5;
+    
+    // Back row defense bonus
+    UInt64 playerBackRowMask = _isWhiteTurn ? FirstRow : LastRow;
+    score += BitOperations.PopCount(playerRegular & playerBackRowMask) * 10;
+    
+    // Material advantage factor (encourage trades when ahead, avoid when behind)
+    int materialDifference = 
+        playerRegularCount + 3 * playerKingCount - 
+        opponentRegularCount - 3 * opponentKingCount;
+    
+    score += materialDifference * 5;
+    
+    return score;
+}
 
     public void ToKing(Position pos)
     {
