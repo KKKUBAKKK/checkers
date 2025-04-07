@@ -45,6 +45,17 @@ public class GameController
             Console.WriteLine($"Move: From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}");
         }
     }
+    
+    public TimeSpan BotThinkingTime
+    {
+        get => _bot.ThinkingTime;
+        set
+        {
+            // Create a new bot with updated thinking time
+            _bot = new Bot(_bot.IsWhite, value);
+            Console.WriteLine($"Bot thinking time set to {value.TotalSeconds} seconds");
+        }
+    }
 
     // Convert UI to board row coordinates
     public int UIToBoardRow(int uiRow)

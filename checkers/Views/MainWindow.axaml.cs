@@ -124,6 +124,41 @@ public partial class MainWindow : Window
         };
         controlPanel.Children.Add(_hintText);
         
+        StackPanel thinkingTimePanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 10, 0, 10)
+        };
+
+        TextBlock thinkingTimeLabel = new TextBlock
+        {
+            Text = "Bot thinking time: 5s",
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 10, 0)
+        };
+
+        Slider thinkingTimeSlider = new Slider
+        {
+            Minimum = 1,
+            Maximum = 20,
+            Value = 5,
+            Width = 150,
+            TickFrequency = 1,
+            IsSnapToTickEnabled = true,
+            TickPlacement = TickPlacement.BottomRight
+        };
+
+        thinkingTimeSlider.ValueChanged += (s, e) =>
+        {
+            int seconds = (int)e.NewValue;
+            thinkingTimeLabel.Text = $"Bot thinking time: {seconds}s";
+            _gameController.BotThinkingTime = TimeSpan.FromSeconds(seconds);
+        };
+
+        thinkingTimePanel.Children.Add(thinkingTimeLabel);
+        thinkingTimePanel.Children.Add(thinkingTimeSlider);
+        controlPanel.Children.Add(thinkingTimePanel);
+        
         // Create the board squares and pieces
         for (int row = 0; row < BoardSize; row++)
         {
