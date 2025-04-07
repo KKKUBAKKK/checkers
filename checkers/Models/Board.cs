@@ -130,7 +130,7 @@ public class Board
 
         UInt64 player = _isWhiteTurn ? _white : _black;
         UInt64 opponent = _isWhiteTurn ? _black : _white;
-        UInt64 all_pieces = _white | _black;
+        UInt64 allPieces = _white | _black;
 
         // Find all the maximum captures
         for (int i = 0; i < BoardSize; i++)
@@ -152,7 +152,7 @@ public class Board
 
             var p = player ^ m.Start;
             var o = opponent ^ m.Captured;
-            var a = all_pieces ^ m.Start;
+            var a = allPieces ^ m.Start;
 
             if ((m.End & (FirstCol | SecondCol)) == 0)
             {
@@ -224,14 +224,14 @@ public class Board
                 {
                     if (
                         (_isWhiteTurn || (start & _kings) != 0)
-                        && (start << UpLeft & ~all_pieces) != 0
+                        && (start << UpLeft & ~allPieces) != 0
                     )
                     {
                         moves.Add(new Move(start, start << UpLeft, 0UL));
                     }
                     if (
                         (!_isWhiteTurn || (start & _kings) != 0)
-                        && (start >> DownLeft & ~all_pieces) != 0
+                        && (start >> DownLeft & ~allPieces) != 0
                     )
                     {
                         moves.Add(new Move(start, start >> DownLeft, 0UL));
@@ -241,14 +241,14 @@ public class Board
                 {
                     if (
                         (_isWhiteTurn || (start & _kings) != 0)
-                        && (start << UpRight & ~all_pieces) != 0
+                        && (start << UpRight & ~allPieces) != 0
                     )
                     {
                         moves.Add(new Move(start, start << UpRight, 0UL));
                     }
                     if (
                         (!_isWhiteTurn || (start & _kings) != 0)
-                        && (start >> DownRight & ~all_pieces) != 0
+                        && (start >> DownRight & ~allPieces) != 0
                     )
                     {
                         moves.Add(new Move(start, start >> DownRight, 0UL));

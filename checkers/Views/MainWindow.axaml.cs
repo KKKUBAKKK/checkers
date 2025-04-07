@@ -15,27 +15,79 @@ using checkers.ViewModels;
 
 namespace checkers.views;
 
+/// <summary>
+/// Main window of the checkers game, handling UI and game interactions
+/// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>
+    /// Size of the game board (8x8)
+    /// </summary>
     private const int BoardSize = 8;
+
+    /// <summary>
+    /// Size of each square on the board in pixels
+    /// </summary>
     private const int SquareSize = 60;
 
+    /// <summary>
+    /// Game ViewModel handling game logic and state
+    /// </summary>
     private GameViewModel _gameViewModel;
+
+    /// <summary>
+    /// 2D array of board squares
+    /// </summary>
     private Rectangle[,] _squares;
+
+    /// <summary>
+    /// 2D array of game pieces
+    /// </summary>
     private Ellipse[,] _pieces;
-    private Rectangle _selectedSquare;
+
+    /// <summary>
+    /// Currently selected square on the board
+    /// </summary>
+    private Rectangle? _selectedSquare;
+
+    /// <summary>
+    /// List of squares highlighted for valid moves
+    /// </summary>
     private List<Rectangle> _highlightedMoves;
+
+    /// <summary>
+    /// Text block showing current game status
+    /// </summary>
     private TextBlock _statusText;
+
+    /// <summary>
+    /// Text block showing AI hint
+    /// </summary>
     private TextBlock _hintText;
+
+    /// <summary>
+    /// Button to request hint from ChatGPT
+    /// </summary>
     private Button _hintButton;
 
-    // Store the board coordinates of the selected piece
+    /// <summary>
+    /// Selected piece's board row position
+    /// </summary>
     private int _selectedBoardRow = -1;
+
+    /// <summary>
+    /// Selected piece's board column position
+    /// </summary>
     private int _selectedBoardCol = -1;
 
-    // Configuration
+    /// <summary>
+    /// OpenAI API key for ChatGPT integration
+    /// </summary>
     private string _openAiApiKey;
 
+    /// <summary>
+    /// Initializes the main window and its components
+    /// </summary>
     public MainWindow()
     {
         this.TransparencyLevelHint = new List<WindowTransparencyLevel>
@@ -55,24 +107,27 @@ public partial class MainWindow : Window
 #endif
     }
 
+    /// <summary>
+    /// Initializes main window components and UI elements
+    /// </summary>
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
     }
 
+    /// <summary>
+    /// Initializes the game components, UI elements, and board layout
+    /// </summary>
     private void InitializeGame()
     {
-        // Initialize the game controller
         _gameViewModel = new GameViewModel(_openAiApiKey);
         _gameViewModel.BoardUpdated += OnBoardUpdated;
         _gameViewModel.HintReceived += OnHintReceived;
 
-        // Initialize UI
         _squares = new Rectangle[BoardSize, BoardSize];
         _pieces = new Ellipse[BoardSize, BoardSize];
         _highlightedMoves = new List<Rectangle>();
 
-        // Create root DockPanel for centering
         DockPanel rootPanel = new DockPanel
         {
             LastChildFill = true,
@@ -81,7 +136,6 @@ public partial class MainWindow : Window
             Background = null,
         };
 
-        // Create main grid with some spacing
         Grid mainGrid = new Grid
         {
             Margin = new Thickness(20),
@@ -89,23 +143,20 @@ public partial class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
         };
 
-        // Create board panel with border and labels
         Grid boardGrid = new Grid();
 
-        // Create rows and columns for the grid
-        boardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) }); // Top labels
+        boardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) });
         boardGrid.RowDefinitions.Add(
             new RowDefinition { Height = new GridLength(BoardSize * SquareSize) }
-        ); // Board
-        boardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) }); // Bottom labels
+        );
+        boardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20) });
 
-        boardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) }); // Left labels
+        boardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
         boardGrid.ColumnDefinitions.Add(
             new ColumnDefinition { Width = new GridLength(BoardSize * SquareSize) }
-        ); // Board
-        boardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) }); // Right labels
+        );
+        boardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
 
-        // Create the board canvas
         Canvas boardPanel = new Canvas
         {
             Width = BoardSize * SquareSize,
@@ -113,16 +164,13 @@ public partial class MainWindow : Window
             Background = new SolidColorBrush(Colors.LightGray),
         };
 
-        // Add the board canvas to the grid
         Grid.SetRow(boardPanel, 1);
         Grid.SetColumn(boardPanel, 1);
         boardGrid.Children.Add(boardPanel);
 
-        // Create column headers grid (A-H)
         Grid topLabelsGrid = new Grid();
         Grid bottomLabelsGrid = new Grid();
 
-        // Add columns to the label grids
         for (int i = 0; i < BoardSize; i++)
         {
             topLabelsGrid.ColumnDefinitions.Add(
@@ -133,7 +181,6 @@ public partial class MainWindow : Window
             );
         }
 
-        // Add labels to the column grids
         for (int col = 0; col < BoardSize; col++)
         {
             TextBlock topLabel = new TextBlock
@@ -159,7 +206,6 @@ public partial class MainWindow : Window
             bottomLabelsGrid.Children.Add(bottomLabel);
         }
 
-        // Add label grids to main grid
         Grid.SetRow(topLabelsGrid, 0);
         Grid.SetColumn(topLabelsGrid, 1);
         boardGrid.Children.Add(topLabelsGrid);
@@ -168,11 +214,9 @@ public partial class MainWindow : Window
         Grid.SetColumn(bottomLabelsGrid, 1);
         boardGrid.Children.Add(bottomLabelsGrid);
 
-        // Create row labels grid (1-8)
         Grid leftLabelsGrid = new Grid();
         Grid rightLabelsGrid = new Grid();
 
-        // Add rows to the label grids
         for (int i = 0; i < BoardSize; i++)
         {
             leftLabelsGrid.RowDefinitions.Add(
@@ -183,7 +227,6 @@ public partial class MainWindow : Window
             );
         }
 
-        // Add labels to the row grids
         for (int row = 0; row < BoardSize; row++)
         {
             TextBlock leftLabel = new TextBlock
@@ -209,7 +252,6 @@ public partial class MainWindow : Window
             rightLabelsGrid.Children.Add(rightLabel);
         }
 
-        // Add label grids to main grid
         Grid.SetRow(leftLabelsGrid, 1);
         Grid.SetColumn(leftLabelsGrid, 0);
         boardGrid.Children.Add(leftLabelsGrid);
@@ -218,7 +260,6 @@ public partial class MainWindow : Window
         Grid.SetColumn(rightLabelsGrid, 2);
         boardGrid.Children.Add(rightLabelsGrid);
 
-        // Put everything in a border
         Border boardBorder = new Border
         {
             BorderBrush = new SolidColorBrush(Colors.DarkGray),
@@ -227,7 +268,6 @@ public partial class MainWindow : Window
             Child = boardGrid,
         };
 
-        // Create control panel with visual styling
         Border controlBorder = new Border
         {
             BorderBrush = new SolidColorBrush(Colors.DarkGray),
@@ -244,7 +284,6 @@ public partial class MainWindow : Window
         };
         StackPanel controlPanel = (StackPanel)controlBorder.Child;
 
-        // Add status text with border
         Border statusBorder = new Border
         {
             BorderBrush = null,
@@ -262,7 +301,6 @@ public partial class MainWindow : Window
         _statusText = (TextBlock)statusBorder.Child;
         controlPanel.Children.Add(statusBorder);
 
-        // Add thinking time control
         StackPanel thinkingTimePanel = new StackPanel
         {
             Orientation = Orientation.Vertical,
@@ -298,7 +336,6 @@ public partial class MainWindow : Window
         thinkingTimePanel.Children.Add(thinkingTimeSlider);
         controlPanel.Children.Add(thinkingTimePanel);
 
-        // Add new game button
         Button newGameButton = new Button
         {
             Content = "New Game",
@@ -309,7 +346,6 @@ public partial class MainWindow : Window
         newGameButton.Click += (s, e) => _gameViewModel.Reset();
         controlPanel.Children.Add(newGameButton);
 
-        // Add get hint button
         _hintButton = new Button
         {
             Content = "Get Hint from ChatGPT",
@@ -320,7 +356,6 @@ public partial class MainWindow : Window
         _hintButton.Click += async (s, e) => await GetHint();
         controlPanel.Children.Add(_hintButton);
 
-        // Add hint text with border
         Border hintBorder = new Border
         {
             BorderBrush = null,
@@ -339,12 +374,10 @@ public partial class MainWindow : Window
         _hintText = (TextBlock)hintBorder.Child;
         controlPanel.Children.Add(hintBorder);
 
-        // Create the board squares and pieces
         for (int row = 0; row < BoardSize; row++)
         {
             for (int col = 0; col < BoardSize; col++)
             {
-                // Create square
                 Rectangle square = new Rectangle
                 {
                     Width = SquareSize,
@@ -365,7 +398,6 @@ public partial class MainWindow : Window
 
                 square.PointerPressed += SquareClicked;
 
-                // Create piece (initially invisible)
                 Ellipse piece = new Ellipse
                 {
                     Width = SquareSize * 0.8,
@@ -387,7 +419,6 @@ public partial class MainWindow : Window
             }
         }
 
-        // Add board and controls to main grid
         mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -397,45 +428,28 @@ public partial class MainWindow : Window
         mainGrid.Children.Add(boardBorder);
         mainGrid.Children.Add(controlBorder);
 
-        // Add the main grid to the root panel
         rootPanel.Children.Add(mainGrid);
 
-        // Set the main content
         this.Content = rootPanel;
 
-        // Update the board
         UpdateBoardDisplay();
     }
 
-    private void LogAvailableMoves()
-    {
-        Console.WriteLine("Available moves at start:");
-        foreach (var move in _gameViewModel.AvailableMoves)
-        {
-            Console.WriteLine(
-                $"From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
-            );
-        }
-    }
-
+    /// <summary>
+    /// Updates the UI when the game board state changes
+    /// </summary>
     private void OnBoardUpdated(object sender, Board board)
     {
         Dispatcher.UIThread.InvokeAsync(() =>
         {
             UpdateBoardDisplay();
             UpdateGameStatus();
-
-            // Log available moves after board update
-            Console.WriteLine("Available moves after update:");
-            foreach (var move in _gameViewModel.AvailableMoves)
-            {
-                Console.WriteLine(
-                    $"From ({move.FromRow},{move.FromCol}) to ({move.ToRow},{move.ToCol}) - Capture: {move.IsCapture}"
-                );
-            }
         });
     }
 
+    /// <summary>
+    /// Updates the hint text when a new hint is received
+    /// </summary>
     private void OnHintReceived(object sender, string hint)
     {
         Dispatcher.UIThread.InvokeAsync(() =>
@@ -445,21 +459,20 @@ public partial class MainWindow : Window
         });
     }
 
+    /// <summary>
+    /// Updates the visual representation of the game board
+    /// </summary>
     private void UpdateBoardDisplay()
     {
-        // Clear any previous selections
         ClearSelection();
 
-        // Update pieces based on the board state
         for (int uiRow = 0; uiRow < BoardSize; uiRow++)
         {
             for (int uiCol = 0; uiCol < BoardSize; uiCol++)
             {
-                // Convert UI to board coordinates
                 int boardRow = _gameViewModel.UIToBoardRow(uiRow);
                 int boardCol = _gameViewModel.UIToBoardCol(uiCol);
 
-                // Get piece using board coordinates
                 int piece = _gameViewModel.GetPieceAt(boardRow, boardCol);
                 Ellipse pieceUI = _pieces[uiRow, uiCol];
 
@@ -471,18 +484,16 @@ public partial class MainWindow : Window
                 {
                     pieceUI.IsVisible = true;
 
-                    // Set the piece appearance consistently
-                    if (piece > 0) // White/positive pieces are player's (WHITE)
+                    if (piece > 0)
                     {
                         pieceUI.Fill = new SolidColorBrush(Colors.White);
                     }
-                    else // Black/negative pieces are opponent's (BLACK)
+                    else
                     {
                         pieceUI.Fill = new SolidColorBrush(Colors.Black);
                     }
 
-                    // Show crown for kings
-                    if (Math.Abs(piece) == 2) // King
+                    if (Math.Abs(piece) == 2)
                     {
                         pieceUI.Stroke = new SolidColorBrush(Colors.Gold);
                         pieceUI.StrokeThickness = 3;
@@ -497,6 +508,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Updates the game status text based on current game state
+    /// </summary>
     private void UpdateGameStatus()
     {
         if (_gameViewModel.IsPlayerTurn)
@@ -523,7 +537,9 @@ public partial class MainWindow : Window
         }
     }
 
-    // Handle clicks on pieces
+    /// <summary>
+    /// Handles clicks on game pieces
+    /// </summary>
     private void PieceClicked(object sender, PointerPressedEventArgs e)
     {
         if (!_gameViewModel.IsPlayerTurn)
@@ -531,23 +547,14 @@ public partial class MainWindow : Window
 
         Ellipse clickedPiece = sender as Ellipse;
 
-        // Get UI coordinates
         int clickedUIRow = (int)clickedPiece.GetValue(Grid.RowProperty);
         int clickedUICol = (int)clickedPiece.GetValue(Grid.ColumnProperty);
 
-        // Immediately convert to board coordinates
         int clickedBoardRow = _gameViewModel.UIToBoardRow(clickedUIRow);
         int clickedBoardCol = _gameViewModel.UIToBoardCol(clickedUICol);
 
-        Console.WriteLine(
-            $"Piece clicked at UI ({clickedUIRow},{clickedUICol}) = Board ({clickedBoardRow},{clickedBoardCol})"
-        );
-
-        // Get the piece at the clicked position using board coordinates
         int piece = _gameViewModel.GetPieceAt(clickedBoardRow, clickedBoardCol);
-        Console.WriteLine($"Piece value: {piece}");
 
-        // Delegate to HandlePositionClick for common logic (using board coordinates)
         HandlePositionClick(
             clickedBoardRow,
             clickedBoardCol,
@@ -555,10 +562,12 @@ public partial class MainWindow : Window
             _squares[clickedUIRow, clickedUICol]
         );
 
-        // Mark event as handled to prevent it propagating to the square underneath
         e.Handled = true;
     }
 
+    /// <summary>
+    /// Handles clicks on board squares
+    /// </summary>
     private void SquareClicked(object sender, PointerPressedEventArgs e)
     {
         if (!_gameViewModel.IsPlayerTurn)
@@ -566,28 +575,20 @@ public partial class MainWindow : Window
 
         Rectangle clickedSquare = sender as Rectangle;
 
-        // Get UI coordinates
         int clickedUIRow = (int)clickedSquare.GetValue(Grid.RowProperty);
         int clickedUICol = (int)clickedSquare.GetValue(Grid.ColumnProperty);
 
-        // Immediately convert to board coordinates
         int clickedBoardRow = _gameViewModel.UIToBoardRow(clickedUIRow);
         int clickedBoardCol = _gameViewModel.UIToBoardCol(clickedUICol);
 
-        Console.WriteLine(
-            $"Square clicked at UI ({clickedUIRow},{clickedUICol}) = Board ({clickedBoardRow},{clickedBoardCol})"
-        );
-
-        // Get the piece at the clicked square using board coordinates
         int piece = _gameViewModel.GetPieceAt(clickedBoardRow, clickedBoardCol);
-        Console.WriteLine($"Piece value: {piece}");
 
-        // Delegate to HandlePositionClick for common logic (using board coordinates)
         HandlePositionClick(clickedBoardRow, clickedBoardCol, piece, clickedSquare);
     }
 
-    // Common logic for handling clicks on board positions
-    // All coordinates here are board coordinates, not UI coordinates
+    /// <summary>
+    /// Common logic for handling clicks on board positions
+    /// </summary>
     private void HandlePositionClick(
         int clickedBoardRow,
         int clickedBoardCol,
@@ -595,90 +596,71 @@ public partial class MainWindow : Window
         Rectangle clickedSquare
     )
     {
-        // If a piece is selected, attempt to make a move
         if (_selectedSquare != null)
         {
-            // If clicking on the same square, deselect it
             if (clickedSquare == _selectedSquare)
             {
                 ClearSelection();
                 return;
             }
 
-            // Get the coordinates of the selected piece
             int fromBoardRow = _selectedBoardRow;
             int fromBoardCol = _selectedBoardCol;
 
-            // Attempt to make a move
             bool moveSuccessful = _gameViewModel.TryMakeMove(
                 fromBoardRow,
                 fromBoardCol,
                 clickedBoardRow,
                 clickedBoardCol
             );
-            Console.WriteLine(
-                $"Tried move from ({fromBoardRow},{fromBoardCol}) to ({clickedBoardRow},{clickedBoardCol}): {(moveSuccessful ? "SUCCESS" : "FAILED")}"
-            );
 
             if (!moveSuccessful && piece > 0)
             {
-                // If we couldn't move, but clicked on another player piece, select that piece instead
                 SelectPiece(clickedBoardRow, clickedBoardCol, clickedSquare);
             }
 
             return;
         }
 
-        // If no piece is selected yet, try to select one
-        if (piece > 0) // Only allow selecting player pieces (white/positive values)
+        if (piece > 0)
         {
             SelectPiece(clickedBoardRow, clickedBoardCol, clickedSquare);
         }
     }
 
-    // Helper method to select a piece and highlight its moves
+    /// <summary>
+    /// Selects a piece and highlights its valid moves
+    /// </summary>
     private void SelectPiece(int boardRow, int boardCol, Rectangle square)
     {
-        // Get moves for this piece
         var pieceMoves = _gameViewModel.GetMovesForPiece(boardRow, boardCol);
 
         if (pieceMoves.Any())
         {
-            // Clear any existing selection
             ClearSelection();
 
-            // Select this piece
             _selectedSquare = square;
             _selectedBoardRow = boardRow;
             _selectedBoardCol = boardCol;
 
-            // Highlight the selected piece
             square.Stroke = new SolidColorBrush(Colors.Yellow);
             square.StrokeThickness = 3;
 
-            // Highlight the valid destinations
             HighlightDestinations(pieceMoves);
-        }
-        else
-        {
-            Console.WriteLine("This piece has no available moves");
         }
     }
 
-    // Highlight only the final destinations of the moves (for multi-captures, only show the end position)
+    /// <summary>
+    /// Highlights valid move destinations for the selected piece
+    /// </summary>
     private void HighlightDestinations(List<Move> moves)
     {
         ClearHighlightedMoves();
 
         foreach (var move in moves)
         {
-            // For multi-captures, connect the dots to show the path
             if (move.IsCapture)
             {
-                // For captures, we want to show the path and then the final destination
-                // This is where you would draw the path line if desired
-
-                // For now, we'll just highlight the final destination
                 int uiRow = _gameViewModel.BoardToUIRow(move.ToRow);
                 int uiCol = _gameViewModel.BoardToUICol(move.ToCol);
 
@@ -689,7 +671,6 @@ public partial class MainWindow : Window
             }
             else
             {
-                // For normal moves, just highlight the destination
                 int uiRow = _gameViewModel.BoardToUIRow(move.ToRow);
                 int uiCol = _gameViewModel.BoardToUICol(move.ToCol);
 
@@ -701,6 +682,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Clears all highlighted moves from the board
+    /// </summary>
     private void ClearHighlightedMoves()
     {
         foreach (var square in _highlightedMoves)
@@ -711,6 +695,9 @@ public partial class MainWindow : Window
         _highlightedMoves.Clear();
     }
 
+    /// <summary>
+    /// Clears the current piece selection and highlighted moves
+    /// </summary>
     private void ClearSelection()
     {
         if (_selectedSquare != null)
@@ -725,6 +712,9 @@ public partial class MainWindow : Window
         ClearHighlightedMoves();
     }
 
+    /// <summary>
+    /// Requests and displays a hint from ChatGPT
+    /// </summary>
     private async Task GetHint()
     {
         if (_gameViewModel.IsPlayerTurn)
